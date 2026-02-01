@@ -1,12 +1,14 @@
 import bpy
 
+from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators import mmi_object_name
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.make_presets import MakePresetsOperator, \
     MakePresets9Operator, MakePrytyOperator, MakePrehts9Operator, MakePrehkhts9Operator, InvertthenormalsOperator, \
     MakePrehOperator, MakePdtysOperator, MakePdtyOperator, Adaptivestrokes, FixAMDgraphicscardsynthesizerbug, \
     EdgePreviewOperator, RevokeEdgePreviewOperator, MMD2MMIEdgePreviewOperator, MakePresets7Operator, \
-    MatchingmaterialsMMDmodelOperator
+    MatchingmaterialsMMDmodelOperator, ConvertOldNameToNewNameOperator, blender_batch_process_operator, \
+    DownloadPresetsOperator, MakePrehtsManualOperator
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.Export import SaveAsBlendOperator
-from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.make_presets import MakePresets1Operator, MakePresets2Operator, \
+from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.make_presets import MakePresets2Operator, \
     MakePresets3Operator, MakePresets4Operator, MakePresets6Operator, MakePres4Operator
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.render_presets import Render2Operator
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.panels import compare_version
@@ -32,6 +34,9 @@ class presetsAddonPanel(bpy.types.Panel):
         obj = context.object
         if obj:
             mmi = obj.mmi
+
+            layout.operator(DownloadPresetsOperator.bl_idname, icon='IMPORT')
+
             layout.prop(mmi, "extras_enabled", text=i18n("Extras"), toggle=True, icon="PREFERENCES")
             if mmi.extras_enabled:
                 layout.prop(mmi, "Post_processing_effect", text=i18n("Post-processing effect"))
@@ -100,13 +105,14 @@ class makeAddonPanel(bpy.types.Panel):
         layout = self.layout
         obj = context.object
         if obj:
-            layout.label(text=i18n("Model presets"))
-            layout.operator(MakePresets1Operator.bl_idname, icon='GREASEPENCIL')
+            layout.prop(obj.mmi, "preset_Template", text=i18n("Preset Template"))
+
             layout.label(text=i18n("Render presets"))
+
             mmi = obj.mmi
             if mmi.re_obj:
-                # 仅当物体是空物体且名称为 'AAAAA' 时显示旋转控件
-                if obj.type == 'EMPTY' and obj.name == "AAAAA":
+                # 仅当物体是空物体且名称为 mmi_object_name["MMI_AAAAA"] 时显示旋转控件
+                if obj.type == 'EMPTY' and obj.name == mmi_object_name["MMI_AAAAA"]:
                     layout.label(text=i18n("Please manually correct the rotation of the controller"))
                     col = layout.box()
                     col.prop(obj, "rotation_euler", index=0, text="X")  # X轴
@@ -135,6 +141,8 @@ class makeAddonPanel(bpy.types.Panel):
                     layout.operator(MakePresets4Operator.bl_idname)
                     layout.operator(MakePresets6Operator.bl_idname)
                     layout.operator(MakePdtyOperator.bl_idname)
+                    layout.operator(ConvertOldNameToNewNameOperator.bl_idname)
+                    layout.operator(blender_batch_process_operator.bl_idname)
 
             layout.label(text=i18n("material" if mmi.SRsampling else "Stroke"))
 
@@ -233,7 +241,7 @@ class OtherfeaturesPanel(bpy.types.Panel):
                 layout.operator(Adaptivestrokes.bl_idname)
 
 class MMIGenshinPanel(bpy.types.Panel):
-    bl_label = "MMI Genshin"
+    bl_label = "MMI node"
     bl_idname = "SCENE_PT_mmi_genshin"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = 'UI'
@@ -252,6 +260,7 @@ class MMIGenshinPanel(bpy.types.Panel):
                 flow.operator(MakePrehkhts9Operator.bl_idname)
                 flow.operator(MakePresets9Operator.bl_idname)
                 flow.operator(MakePrehts9Operator.bl_idname)
+                layout.operator(MakePrehtsManualOperator.bl_idname)
                 layout.operator(InvertthenormalsOperator.bl_idname)
 
 class MMI_UL_ImageList(bpy.types.UIList):
@@ -294,7 +303,7 @@ class AutomaticMatchingPanel(bpy.types.Panel):
     # name of the side panel
     bl_category = "MMI"
     # 指定父面板的 ID
-    bl_parent_id = "SCENE_PT_Default"
+    bl_parent_id = "SCENE_PT_make_presets"
     # 折叠面板
     bl_options = {'DEFAULT_CLOSED'}
 

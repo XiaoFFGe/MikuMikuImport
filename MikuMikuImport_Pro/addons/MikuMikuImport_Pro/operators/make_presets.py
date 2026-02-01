@@ -1,8 +1,11 @@
 import os
 import re
+import webbrowser
+
 import bpy
 from difflib import SequenceMatcher
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.config import __addon_name__
+from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators import mmi_object_name
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators.Local_search_engines import search_files
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.panels import compare_version
 
@@ -47,65 +50,6 @@ class MakePresetsOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
-class MakePresets1Operator(bpy.types.Operator):
-    '''Handle related objects with one click'''
-    bl_idname = "object.makes_presets_ops"
-    bl_label = "Handle related objects with one click"
-
-    # 确保在操作之前备份数据，用户撤销操作时可以恢复
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context: bpy.types.Context):
-        return context.active_object is not None
-
-    def execute(self, context):
-
-        # 遍历所有选中的物体
-        for obj in bpy.context.selected_objects:
-            # 检查物体是否为Empty类型
-            if obj.type == 'EMPTY':
-                print(f"{obj.name} 是一个MMD根物体。")
-                # 检查物体名称是否为【MMD预设】
-                if obj.name != '【MMD预设】':
-                    print('不等于')
-                else:
-                    self.report({'INFO'}, f"{obj.name}已经被命名了")
-                    return {'FINISHED'}
-            else:
-                print(f"{obj.name} 不是MMD根物体。")
-                self.report({'WARNING'}, f"{obj.name}不是MMD根物体")
-                return {'FINISHED'}
-
-        # 获取所有灯光类型的物体
-        lights = [obj for obj in bpy.data.objects if obj.type == 'LIGHT']
-
-        # 获取所有选中物体的名称（并清理标点符号）
-        selected_objects_names = [re.sub(r'[^\w\s]', '', obj.name) for obj in bpy.context.selected_objects]
-
-        # 重命名灯光物体
-        for i, light in enumerate(lights):
-            if i < len(selected_objects_names):
-                light.name = '__|【' + selected_objects_names[i] + "】|__"
-                # 获取所有选中的物体
-                selected_objects = bpy.context.selected_objects
-
-                # 检查是否至少有一个物体被选中
-                if selected_objects:
-                    # 遍历所有选中的物体
-                    for obj in selected_objects:
-                        # 为每个物体生成新名称
-                        obj.name = "【MMD预设】"
-                        print(f"物体已重命名为：{obj.name}")
-                else:
-                    print("没有物体被选中！")
-                    return {'FINISHED'}
-
-                self.report({'INFO'}, f"已完成命名")
-        return {'FINISHED'}
-
-
 class MakePresets2Operator(bpy.types.Operator):
     '''Name the model'''
     bl_idname = "object.makess_presets_ops"
@@ -125,15 +69,15 @@ class MakePresets2Operator(bpy.types.Operator):
 
         # 获取当前活动的物体
         active_object = bpy.context.active_object
-        if active_object.name == 'AAAA':
+        if active_object.name == mmi_object_name["MMI_AAAA"]:
             print('已经被命名了')
             self.report({'INFO'}, f"{active_object.name}已经被命名了")
         else:
             # 更改物体名称
             if active_object is not None:
-                active_object.name = 'AAAA'
-                print(f"物体已重命名为 'AAAA'")
-                self.report({'INFO'}, f"已重命名为 'AAAA'")
+                active_object.name = mmi_object_name["MMI_AAAA"]
+                print(f"物体已重命名为 {mmi_object_name['MMI_AAAA']}")
+                self.report({'INFO'}, f"已重命名为 {mmi_object_name['MMI_AAAA']}")
 
             else:
                 print("没有活动的物体可以重命名。")
@@ -160,14 +104,14 @@ class MakePresets3Operator(bpy.types.Operator):
 
         # 获取当前活动的物体
         active_object = bpy.context.active_object
-        if active_object.name == 'AAA':
+        if active_object.name == mmi_object_name["MMI_AAA"]:
             print('已经被命名了')
             self.report({'INFO'}, f"{active_object.name}已经被命名了")
         else:
             # 更改物体名称
             if active_object is not None:
-                active_object.name = 'AAA'
-                print(f"物体已重命名为 'AAA'")
+                active_object.name = mmi_object_name["MMI_AAA"]
+                print(f"物体已重命名为 {mmi_object_name['MMI_AAA']}")
             else:
                 print("没有活动的物体可以重命名。")
         return {'FINISHED'}
@@ -192,14 +136,14 @@ class MakePresets4Operator(bpy.types.Operator):
 
         # 获取当前活动的物体
         active_object = bpy.context.active_object
-        if active_object.name == 'AAAAA':
+        if active_object.name == mmi_object_name["MMI_AAAAA"]:
             print('已经被命名了')
             self.report({'INFO'}, f"{active_object.name}已经被命名了")
         else:
             # 更改物体名称
             if active_object is not None:
-                active_object.name = 'AAAAA'
-                print(f"物体已重命名为 'AAAAA'")
+                active_object.name = mmi_object_name["MMI_AAAAA"]
+                self.report({'INFO'}, f"已重命名为 {mmi_object_name['MMI_AAAAA']}")
             else:
                 print("没有活动的物体可以重命名。")
         return {'FINISHED'}
@@ -226,7 +170,7 @@ class MakePresets6Operator(bpy.types.Operator):
         active_object_name = context.active_object.name
         print('物体名称：', active_object_name)
 
-        if active_object_name != "AA":
+        if active_object_name != mmi_object_name["MMI_AA"]:
 
             # 获取所有灯光类型的物体
             lights = [obj for obj in bpy.data.objects if obj.type == 'LIGHT']
@@ -241,7 +185,7 @@ class MakePresets6Operator(bpy.types.Operator):
 
             # 重命名物体
             bpy.data.objects.get(active_object_name)
-            context.active_object.name = "AA"
+            context.active_object.name = mmi_object_name["MMI_AA"]
         else:
             print('已经被命名了')
             self.report({'INFO'}, f"已经被命名了")
@@ -744,6 +688,73 @@ class MakePrehkhts9Operator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MakePrehtsManualOperator(bpy.types.Operator):
+    '''genshin presets'''
+    bl_idname = "object.genshin_manual_ops"
+    bl_label = "Manual/手动"
+
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        mmi = context.object.mmi
+
+        def search_engine(i):
+            keywords = str(i).split()
+            file_paths = search_files(keywords, mmi.filepath)
+            for path in file_paths:
+                print(path)
+                return path
+
+        # 获取当前活动对象的活动材质
+        mat = bpy.context.object.active_material
+        if mat and mat.node_tree:
+            # 获取节点树中的所有节点
+            nodes = mat.node_tree.nodes
+            # 逐个删除节点
+            for node in nodes:
+                mat.node_tree.nodes.remove(node)
+
+        def Connect_the_nodes(node1, 端口1, node2, 端口2):
+            # 查找名为1和2的节点
+            node_1 = None
+            node_2 = None
+            for node in mat.node_tree.nodes:
+                if node.name == node1:
+                    node_1 = node
+                elif node.name == node2:
+                    node_2 = node
+
+            # 如果找到两个节点，则连接它们的端口
+            if node_1 and node_2:
+                output_socket = node_1.outputs.get(端口1)
+                input_socket = node_2.inputs.get(端口2)
+                if output_socket and input_socket:
+                    mat.node_tree.links.new(output_socket, input_socket)
+
+        # 创建材质输出节点
+        output_node = mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
+        # 设置节点位置
+        output_node.location = (200, 0)
+
+        # 创建节点组
+        Group_node = mat.node_tree.nodes.new('ShaderNodeGroup')
+        Group_node.location = (0, 0)
+        my_group = bpy.data.node_groups["MMI节点"]
+        Group_node.node_tree = my_group
+        Group_node.name = "MMI节点"
+
+        # 连续节点
+        Connect_the_nodes(Group_node.name, '结果', output_node.name, 'Surface')
+
+        # 切换材质槽
+        array = context.object.active_material_index
+        context.object.active_material_index = array + 1
+        bpy.context.object.active_material.preview_render_type = 'FLAT'
+        return {'FINISHED'}
+
+
 
 class MakePrytyOperator(bpy.types.Operator):
     '''Load the node group'''
@@ -756,15 +767,17 @@ class MakePrytyOperator(bpy.types.Operator):
     def execute(self, context):
 
         Obj1 = context.active_object
-
-        # 获取当前运行的Py文件的路径
-        current_file_path = __file__
-        # 获取当前Py文件所在的文件夹路径
-        new_path = os.path.dirname(current_file_path)
-        # 将当前文件夹路径和文件名组合成完整的文件路径
-        file = 'bhp.blend'
-        new_file_path = os.path.join(new_path, file)
-        print(new_file_path)
+        if Obj1.mmi.preset_Template == "":
+            # 获取当前运行的Py文件的路径
+            current_file_path = __file__
+            # 获取当前Py文件所在的文件夹路径
+            new_path = os.path.dirname(current_file_path)
+            # 将当前文件夹路径和文件名组合成完整的文件路径
+            file = 'bhp.blend'
+            new_file_path = os.path.join(new_path, file)
+            print(new_file_path)
+        else:
+            new_file_path = Obj1.mmi.preset_Template
 
         def Additional_actions(A, B, filepath):
             # 指定要追加的集合的名称
@@ -781,7 +794,7 @@ class MakePrytyOperator(bpy.types.Operator):
             )
 
         # 追加集合
-        Additional_actions('一些东西', 'Collection', new_file_path)
+        Additional_actions('MMI_一些东西', 'Collection', new_file_path)
 
         def delete_object(object_name):
             object_to_delete = bpy.data.objects.get(object_name)
@@ -835,10 +848,10 @@ class MakePrytyOperator(bpy.types.Operator):
             bpy.data.collections.remove(target_coll)
 
         # 执行操作
-        delete_collection_and_move_to_parent('一些东西')
+        delete_collection_and_move_to_parent('MMI_一些东西')
 
         # 定义一个列表
-        object_names = ["AAAA", "AAA", "AA"]
+        object_names = ["MMI_AAAA"]
         # 遍历物体名称列表，调用delete_object函数删除物体
         for object_name in object_names:
             delete_object(object_name)
@@ -1169,7 +1182,7 @@ class MakePrehOperator(bpy.types.Operator):
     @classmethod
     def poll(cls, context: bpy.types.Context):
         if context.active_object is not None:
-            if context.active_object.type == 'EMPTY':
+            if context.active_object.mmd_type == "ROOT":  # 检查是否为MMD根对象
                 return True
         return False
 
@@ -1177,7 +1190,7 @@ class MakePrehOperator(bpy.types.Operator):
         addon_prefs = context.preferences.addons[__addon_name__].preferences
         # 获取当前活动的物体
         active_object = bpy.context.active_object
-        if active_object.name == 'AA':
+        if active_object.name == mmi_object_name["MMI_AA"]:
             print('已经被命名了')
             self.report({'INFO'}, f"{active_object.name}已经被命名了")
         else:
@@ -1282,7 +1295,7 @@ class MakePrehOperator(bpy.types.Operator):
                 # SDF
                 # 遍历所有物体，找到类型为 'EMPTY' 且名称里有 脸部定位 的物体
                 for obj in bpy.data.objects:
-                    if obj.type == 'EMPTY' and '脸部定位' in obj.name:
+                    if obj.type == 'EMPTY' and 'MMI_脸部定位' in obj.name:
                         # 选中物体
                         obj.select_set(True)
                         # 激活物体
@@ -1330,7 +1343,7 @@ class MakePdtyOperator(bpy.types.Operator):
         new_constraint = active_object.constraints[-1]
         # 设置约束
         new_constraint.name = '脸部定位-子级'
-        new_constraint.target = bpy.data.objects['AAA']
+        new_constraint.target = bpy.data.objects[mmi_object_name["MMI_AAA"]]
         new_constraint.subtarget = addon_prefs.positioning_bone
         bpy.ops.constraint.childof_set_inverse(constraint="脸部定位-子级", owner='OBJECT')
         bpy.ops.constraint.childof_clear_inverse(constraint="脸部定位-子级", owner='OBJECT')
@@ -2075,6 +2088,8 @@ class MatchingmaterialsMMDmodelOperator(bpy.types.Operator):
                         bpy.ops.object.genshin_presets_ops()
                     if value == "BODY":
                         bpy.ops.object.genshin_body_ops()
+                    if value == 'MANUAL':
+                        bpy.ops.object.genshin_manual_ops()
                     if value == "SKIP":
                         continue # 跳过匹配
                     print(f"材质 '{slot.material.name}' 对应的模式为 '{value}'")
@@ -2083,3 +2098,82 @@ class MatchingmaterialsMMDmodelOperator(bpy.types.Operator):
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+# 旧版命名转换为新版命名
+class ConvertOldNameToNewNameOperator(bpy.types.Operator):
+    '''Convert old name to new name'''
+    bl_idname = "object.convert_old_name_to_new_name_ops"
+    bl_label = "Convert old name to new name"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        old_names = ['AA', 'AAA', 'AAAA', 'AAAAA', '脸部定位']
+
+        for obj in bpy.data.objects:
+
+            if obj.name == old_names[0]:
+                obj.name = mmi_object_name["MMI_AA"]
+
+            if obj.name == old_names[1]:
+                obj.name = mmi_object_name["MMI_AAA"]
+
+            if obj.name == old_names[2]:
+                obj.name = mmi_object_name["MMI_AAAA"]
+
+            if obj.name == old_names[3]:
+                obj.name = mmi_object_name["MMI_AAAAA"]
+
+            if obj.name == old_names[4]:
+                obj.name = "MMI_脸部定位"
+
+        return {'FINISHED'}
+
+# 批量处理当前目录的.blend文件
+class blender_batch_process_operator(bpy.types.Operator):
+    """Convert all .blend files to new naming format"""
+    bl_idname = "object.blender_batch_process_ops"
+    bl_label = "Convert all .blend files to new naming format"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        # 获取当前目录
+        current_dir = bpy.path.abspath("//")
+
+        # 遍历当前目录下的所有.blend文件
+        for file in os.listdir(current_dir):
+            if file.endswith(".blend"):
+                # 构建.blend文件的完整路径
+                blend_file_path = os.path.join(current_dir, file)
+
+                # 加载.blend文件
+                bpy.ops.wm.open_mainfile(filepath=blend_file_path)
+
+                # 执行转换旧名新名操作
+                bpy.ops.object.convert_old_name_to_new_name_ops()
+
+                # 保存.blend文件
+                bpy.ops.wm.save_mainfile()
+
+                print(f"已处理文件: {file}")
+
+        return {'FINISHED'}
+
+# 下载预设
+class DownloadPresetsOperator(bpy.types.Operator):
+    '''Download presets'''
+    bl_idname = "object.download_presets_ops"
+    bl_label = "Download presets"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        # 打开网页
+        URL = "https://github.com/XiaoFFGe/MikuMikuImport/tree/main/"
+
+        webbrowser.open(URL)
+
+        return {'FINISHED'}

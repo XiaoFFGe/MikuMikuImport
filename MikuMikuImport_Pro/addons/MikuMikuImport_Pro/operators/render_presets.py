@@ -2,8 +2,11 @@ import re
 import bpy
 import os
 import random
+import string
 import mathutils
 import string
+
+from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.operators import mmi_object_name
 from MikuMikuImport_Pro.common.i18n.i18n import i18n
 from difflib import SequenceMatcher # 用于计算两个序列的相似度
 from MikuMikuImport_Pro.addons.MikuMikuImport_Pro.config import __addon_name__
@@ -47,19 +50,14 @@ class Render2Operator(bpy.types.Operator):
         subtype='FILE_NAME',
         description = '输入一个定位骨骼名称，留空则选择预设指定的默认骨骼'
     )
-    Fuzzy: bpy.props.BoolProperty(
-        default=True,
-        name="Fuzzy search",
-        description="模糊搜索"
-    )
-    Traditional: bpy.props.BoolProperty(
-        default=False,
-        name="Traditional associations",
-        description="传统关联"
-    )
-    # 临时存储布尔属性
-    Temp: bpy.props.BoolProperty(
-        default=False,
+    Fuzzy: bpy.props.EnumProperty(
+        name="Matching Pattern",
+        items=[
+            ('0', "模糊搜索", "模糊搜索"),
+            ('1', "传统关联", "传统关联"),
+        ],
+        default='0',
+        description="选择匹配模式"
     )
 
     def execute(self, context):
@@ -203,24 +201,28 @@ class Render2Operator(bpy.types.Operator):
 
         print('模型名称：',punctuation)
 
-        # 遍历所有物体，选择名为"AAAAA"的物体
-        for obj in bpy.data.objects:
-            if obj.name == "AAAAA":
-                obj.select_set(True)
-                break  # 找到后退出循环
+        # 找到物体
+        shade_obj = bpy.data.objects.get(mmi_object_name["MMI_AAAAA"])
 
-        # 激活所选的物体
-        bpy.context.view_layer.objects.active = obj
-
-        if bpy.context.view_layer.objects.active is not None:
-            # 生成一个五位的随机数，并转换为字符串
-            random_number = str(random.randint(1000, 9999))
-            # 重命名当前活动的物体，在原名称后添加随机数
-            new_name = punctuation + " 脸部定位 " + random_number
-            bpy.context.view_layer.objects.active.name = new_name
+        new_name = ''
+        if shade_obj:
+            while True:
+                # 生成一个五位的随机字母字符串
+                random_letters = ''.join(random.choices(string.ascii_letters, k=5))
+                # 构建新名称
+                new_name = punctuation + " 脸部定位 " + random_letters
+                # 检查新名称是否已存在
+                name_exists = False
+                for u_obj in bpy.data.objects:
+                    if u_obj.name == new_name:
+                        name_exists = True
+                        break
+                # 如果名称不存在，退出循环
+                if not name_exists:
+                    break
+            shade_obj.name = new_name # 重命名物体
             # 打印新名称
-            shade = bpy.context.view_layer.objects.active.name
-            print("新名称:", shade)
+            print("新名称:", shade_obj)
 
         # 取消选择所有物体
         bpy.ops.object.select_all(action='DESELECT')
@@ -229,15 +231,15 @@ class Render2Operator(bpy.types.Operator):
         if bpy.context.active_object.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        # 获取名称为 'AAAA' 的物体
-        obj = bpy.data.objects.get('AAAA')
+        # 获取名称为 'MMI_AAAA' 的物体
+        obj = bpy.data.objects.get(mmi_object_name["MMI_AAAA"])
 
         material_offsets =None
         thickness_rounded = None
         vertex = None
         Stroke_merging = None
 
-        if not self.Fuzzy:
+        if self.Fuzzy == '1':
             # 检查物体是否存在
             if obj:
                 # 检查物体是否是网格类型
@@ -259,8 +261,8 @@ class Render2Operator(bpy.types.Operator):
                                 print(f"物体 '{obj.name}' 的 Solidify 修改器的vertex_group属性值为: {vertex}")
 
             else:
-                print("物体 'AAAA' 不存在。")
-        else:
+                print(f"物体 '{mmi_object_name['MMI_AAAA']}' 不存在。")
+        elif self.Fuzzy == '0':
             # 检查物体是否存在
             if obj:
                 # 检查物体是否是网格类型
@@ -289,7 +291,7 @@ class Render2Operator(bpy.types.Operator):
                                 Stroke_merging = modifis[inputs['描边合并'].identifier]
                                 print(f"修改器 '{modifis.name}' 的描边合并属性值为: {Stroke_merging}")
             else:
-                print("物体 'AAAA' 不存在。")
+                print(f"物体 '{mmi_object_name['MMI_AAAA']}' 不存在。")
 
 # ----------------------------------------------------------------------------------------------------------------------
         if self.Legacy_face_positioning :
@@ -326,26 +328,22 @@ class Render2Operator(bpy.types.Operator):
             # 打印坐标
             print(f"骨骼部位 {bone_name} 的世界空间位置坐标是:", world_head_position)
 
-            # 物体的名字
-            object_name = shade
-
             # 根据名字选择物体
-            obj = bpy.data.objects.get(object_name)
+            obj = bpy.data.objects.get(shade_obj.name)
             if obj is not None:
                 obj.select_set(True)
                 # 设置为活动物体
                 bpy.context.view_layer.objects.active = obj
-                print(f"物体 '{object_name}' 已被选择并设置为活动物体。")
+                print(f"物体 '{obj.name}' 已被选择并设置为活动物体。")
 
             # 获取想要移动的物体
-            object_name = shade
-            object_to_move = bpy.data.objects.get(object_name)
+            object_to_move = bpy.data.objects.get(shade_obj.name)
 
             # 将物体移动到骨骼部位“頭”的世界空间位置坐标
             object_to_move.location = world_head_position
 
             # 打印确认信息
-            print(f"物体 {object_name} 已经移动到位置 {object_to_move.location}")
+            print(f"物体 {object_to_move.name} 已经移动到位置 {object_to_move.location}")
 
             # 旋转值校正
             def add_copy_rotation_constraint(object_name, subtarget, name, mix_mode, influence):
@@ -403,7 +401,7 @@ class Render2Operator(bpy.types.Operator):
                 bone_to_select.select_head = True
                 bone_to_select.select_tail = True
                 bpy.context.object.data.bones.active = bpy.context.object.data.bones['頭']
-                # 设置'AAAAA'为'頭'的子级
+                # 设置'MMI_AAAAA'为'頭'的子级
                 bpy.ops.object.parent_set(type='BONE', keep_transform=False)
 
                 # 退出姿势模式
@@ -414,16 +412,13 @@ class Render2Operator(bpy.types.Operator):
                     obj.select_set(False)
 # ----------------------------------------------------------------------------------------------------------------------
         else:
-            # 物体的名字
-            object_name = shade
-
             # 根据名字选择物体
-            obj = bpy.data.objects.get(object_name)
+            obj = bpy.data.objects.get(shade_obj.name)
             if obj is not None:
                 obj.select_set(True)
                 # 设置为活动物体
                 bpy.context.view_layer.objects.active = obj
-                print(f"物体 '{object_name}' 已被选择并设置为活动物体。")
+                print(f"物体 '{obj.name}' 已被选择并设置为活动物体。")
 
             # 获取目标物体
             obj = bpy.context.active_object
@@ -483,7 +478,7 @@ class Render2Operator(bpy.types.Operator):
         tyus.hide_set(hidden_state)
 
         # 选择两个物体
-        object_names = ['AAAA', active_object.name]
+        object_names = [mmi_object_name["MMI_AAAA"], active_object.name]
 
         # 遍历这两个物体名称
         for object_name in object_names:
@@ -499,14 +494,15 @@ class Render2Operator(bpy.types.Operator):
 
 
         # 核心代码
-        if not self.Fuzzy:
+        if self.Fuzzy == '1':
             if mmi.Copy_object_data:
                 bpy.ops.object.make_links_data(type='OBDATA')
             else:
                 bpy.ops.object.make_links_data(type='MATERIAL')
-                bpy.ops.object.data_transfer(data_type='VGROUP_WEIGHTS', layers_select_src=vertex,
-                                            layers_select_dst='NAME', mix_mode='REPLACE')
-        else:
+                if vertex:
+                    bpy.ops.object.data_transfer(data_type='VGROUP_WEIGHTS', layers_select_src=vertex, layers_select_dst='NAME', mix_mode='REPLACE')
+        elif self.Fuzzy == '0':
+            # 模糊匹配材质
             a_obj_list = []
             b_obj_list = []
             b_obj_edge_list = []
@@ -590,7 +586,7 @@ class Render2Operator(bpy.types.Operator):
                 bpy.ops.object.delete()
 
         # 定义一个列表
-        object_names = ["AAAA", "AAA", "AA"]
+        object_names = [mmi_object_name["MMI_AAAA"], mmi_object_name["MMI_AAA"], mmi_object_name["MMI_AA"]]
         # 遍历物体名称列表，调用delete_object函数删除物体
         for object_name in object_names:
             delete_object(object_name)
@@ -624,7 +620,7 @@ class Render2Operator(bpy.types.Operator):
             # 获取指定集合
             collection = bpy.data.collections.get(collection_name)
             if collection is None:
-                print(f"Collection '{collection_name}' not found.")
+                print(f"集合 '{collection_name}' 未找到。")
                 return
 
             # 获取物体名称
@@ -657,16 +653,17 @@ class Render2Operator(bpy.types.Operator):
 
             new1_name = selected_object.name
             collection.name = new1_name
-            print(f"Collection '{collection_name}' renamed to '{new1_name}'.")
+            print(f"集合 '{collection_name}' 已重命名为 '{new1_name}'。")
+
 
         # 调用函数，将集合【MMD预设】的名称重命名为当前选中物体的名称
         rename_collection_to_selected_object_name("【MMD预设】")
         bpy.context.view_layer.objects.active = bpy.data.objects.get(active_object.name)
 
         # 获取当前上下文中的活动对象
-        obj = bpy.context.active_object
+        obj = active_object
 
-        if not self.Fuzzy:
+        if self.Fuzzy == '1':
             # 检查对象是否存在
             if obj:
                 # 检查对象是否已经有名为"自动描边"的修改器
@@ -679,18 +676,21 @@ class Render2Operator(bpy.types.Operator):
                     modifier.name = "自动描边"
 
             # 设置修改器的属性，例如厚度等
-            thickness_float = float(thickness_rounded)
-            bpy.context.object.modifiers["自动描边"].thickness = thickness_float
-            bpy.context.object.modifiers["自动描边"].vertex_group = vertex
-            bpy.context.object.modifiers["自动描边"].offset = 1
-            bpy.context.object.modifiers["自动描边"].use_rim = False
-            bpy.context.object.modifiers["自动描边"].use_flip_normals = True
-            material_offset_value = int(material_offsets)
-            bpy.context.object.modifiers["自动描边"].material_offset = material_offset_value
+            if thickness_rounded:
+                thickness_float = float(thickness_rounded)
+                obj.modifiers["自动描边"].thickness = thickness_float
+            if vertex:
+                obj.modifiers["自动描边"].vertex_group = vertex
+            obj.modifiers["自动描边"].offset = 1
+            obj.modifiers["自动描边"].use_rim = False
+            obj.modifiers["自动描边"].use_flip_normals = True
+            if material_offsets:
+                material_offset_value = int(material_offsets)
+                obj.modifiers["自动描边"].material_offset = material_offset_value
             # 遍历所有的物体，并取消选择
             for obj in bpy.context.view_layer.objects:
                 obj.select_set(False)
-        else:
+        elif self.Fuzzy == '0':
             # 检查对象是否存在
             if obj:
                 # 检查对象是否已经有名为"MMI-边缘预览"的几何节点修改器
@@ -710,14 +710,7 @@ class Render2Operator(bpy.types.Operator):
             new_modifier[inputs["材质偏移"].identifier] = material_offsets
             new_modifier[inputs["描边合并"].identifier] = Stroke_merging
 
-            # 遍历所有的物体，并取消选择
-            for obj in bpy.context.view_layer.objects:
-                obj.select_set(False)
-
-        # 设置色彩空间
-        bpy.context.scene.display_settings.display_device = 'sRGB'
-        bpy.context.scene.view_settings.view_transform = 'Standard'
-        bpy.context.scene.view_settings.look = 'None'
+        bpy.ops.object.select_all(action='DESELECT') # 取消所有物体的选择
 
         if mmi.Post_processing_effect:
             bpy.ops.object.maeg_ops()
@@ -736,19 +729,5 @@ class Render2Operator(bpy.types.Operator):
             layout.prop(self, 'Position_the_bones',text=i18n('Position the bones'),icon='OBJECT_DATAMODE')
 
         layout.label(text=i18n('Material matching:'))
-        flow = layout.column_flow(columns=2, align=True)
-        flow.prop(self,'Fuzzy' if self.Fuzzy else 'Temp', text=i18n('Fuzzy search'), toggle=True)
-        flow.prop(self, 'Traditional', text=i18n('Traditional associations'), toggle=True)
+        layout.prop(self, 'Fuzzy', text=i18n('Matching Pattern'), expand=True)
 
-        if self.Traditional:
-            self.Fuzzy = False
-        if self.Fuzzy:
-            self.Traditional = False
-        if self.Temp:
-            self.Traditional = False
-            self.Fuzzy = True
-            self.Temp = False
-        if not self.Fuzzy and not self.Traditional:
-            self.Fuzzy = True
-            self.Traditional = False
-            self.Temp = False

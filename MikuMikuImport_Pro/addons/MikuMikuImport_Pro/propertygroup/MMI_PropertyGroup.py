@@ -6,6 +6,7 @@ IMAGE_TYPES = [
     ('FACE', "face", "脸部"),
     ('HAIR', "hair", "头发"),
     ('BODY', "body", "身体"),
+    ('MANUAL', 'Manual', '手动'),
     ('SKIP', "skip", "跳过匹配"),
 ]
 
@@ -120,6 +121,16 @@ class MMI_property(bpy.types.PropertyGroup):
         ],
         default='颜'
     )
+
+    # 预设模板
+    preset_Template: bpy.props.StringProperty(
+        name="Preset Template",
+        default="",
+        description="选择一个预设模板，空白默认使用默认预设",
+        subtype='FILE_PATH',
+    )
+
+
 class MMIStrokeitem(bpy.types.PropertyGroup):
     material: bpy.props.PointerProperty(
         type=bpy.types.Material,
