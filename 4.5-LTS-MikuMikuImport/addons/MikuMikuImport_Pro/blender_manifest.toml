@@ -1,0 +1,57 @@
+schema_version = "1.0.0"
+
+# 扩展的唯一标识，需与目录名一致
+id = "MikuMikuImport_Pro"
+# 版本号
+version = "4.0.5"
+# 插件名称
+name = "MMI Pro"
+# 简短描述
+tagline = "导入MMD模型渲染预设"
+# 维护者信息
+maintainer = "小峰峰哥l"
+# 支持的类型，这里是插件
+type = "add-on"
+
+# 可选的文档、支持、源文件等链接
+website = "https://space.bilibili.com/2109816568?spm_id_from=333.1007.0.0"
+
+# 可选的标签列表，由Blender和服务器定义
+tags = ["Animation", "Sequencer", "Import-Export"]
+
+# 支持的最小Blender版本
+blender_version_min = "4.2.0"
+# 可选：不支持的Blender版本，低于此版本的支持
+# blender_version_max = "5.1.0"
+
+# 遵循https://spdx.org/licenses/的许可证
+license = [
+    "SPDX:GPL-3.0-or-later"
+]
+# 可选：部分许可证需要的版权信息
+ copyright = [
+   "2025-2280 小峰峰哥l",
+ ]
+
+# 可选的支持平台列表，如果省略则所有操作系统都可用
+platforms = ["windows-x64", "macos-arm64", "linux-x64"]
+
+# 可选：打包第三方Python模块
+# wheels = [
+#   "./wheels/hexdump-3.3-py3-none-any.whl",
+#   "./wheels/jsmin-3.0.1-py3-none-any.whl",
+# ]
+
+# 可选：插件所需的资源列表
+[permissions]
+network = "Need to sync motion-capture data to server"
+files = "Import/export FBX, MMD assets"
+clipboard = "Copy and paste bone transforms"
+
+# 可选：构建设置
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "/.git/",
+  "/*.zip"
+]
