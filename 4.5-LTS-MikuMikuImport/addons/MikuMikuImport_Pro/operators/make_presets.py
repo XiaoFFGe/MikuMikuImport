@@ -7,7 +7,6 @@ from difflib import SequenceMatcher
 from addons.MikuMikuImport_Pro.config import __addon_name__
 from addons.MikuMikuImport_Pro.operators import mmi_object_name
 from addons.MikuMikuImport_Pro.operators.Local_search_engines import search_files
-from addons.MikuMikuImport_Pro.panels import compare_version
 
 
 class MakePresetsOperator(bpy.types.Operator):
@@ -1056,20 +1055,6 @@ class MakePres4Operator(bpy.types.Operator):
         Connect_the_nodes(The_current_scene_rendernode(), "边缘光数据", "边缘光深度", "边缘光数据")
         Connect_the_nodes(The_current_scene_rendernode(), "Alpha", output_node.name, "Alpha")
 
-
-        # 获取Blender的版本号
-        version = bpy.app.version_string
-        # 验证blender版本
-        if compare_version(version, '4.1.99'):
-            # 设置原生辉光
-            scene_1 = bpy.context.scene.eevee
-            scene_1.use_bloom = True
-            scene_1.bloom_threshold = 0.75
-            scene_1.bloom_color = (1, 0.705734, 0.340661)
-            scene_1.bloom_intensity = 0.05
-            scene_1.bloom_knee = 0.7
-            scene_1.bloom_radius = 7.6
-
         bpy.context.area.ui_type = 'VIEW_3D'
         bpy.context.space_data.shading.use_compositor = 'ALWAYS'
 
@@ -1413,11 +1398,7 @@ class Adaptivestrokes(bpy.types.Operator):
                     print("在激活对象中未找到几何节点修改器。")
                     return
 
-            # 通过接口索引设置参数
-            if compare_version(bpy.app.version_string, '4.1.99'):  # 检查版本
-                inputs = target_modifier.node_group.inputs
-            else:
-                inputs = target_modifier.node_group.interface.items_tree
+            inputs = target_modifier.node_group.interface.items_tree
 
             Input = '["'+str(inputs["描边厚度"].identifier)+'"]'
 
@@ -1705,9 +1686,6 @@ class EdgePreviewOperator(bpy.types.Operator):
             if e:
                 new_material = bpy.data.materials.new(name='mmi-edge|' + material_name)
                 new_material.use_nodes = True  # 启用节点
-                if compare_version(bpy.app.version_string, '4.1.99'):
-                    new_material.blend_method = 'HASHED'
-                    new_material.shadow_method = 'NONE'
             else:
                 new_material = bpy.data.materials.get('mmi-edge|' + material_name)
                 new_material.use_nodes = True
@@ -1754,11 +1732,7 @@ class EdgePreviewOperator(bpy.types.Operator):
             new_modifiers = obj_A.modifiers.new(name="MMI-边缘预览", type='NODES')
             new_modifiers.node_group = bpy.data.node_groups["MMI-自动描边"]
 
-            # 通过接口索引设置参数
-            if compare_version(bpy.app.version_string, '4.1.99'):  # 检查版本
-                inputs = new_modifiers.node_group.inputs
-            else:
-                inputs = new_modifiers.node_group.interface.items_tree
+            inputs = new_modifiers.node_group.interface.items_tree
 
             new_modifiers[inputs["描边厚度"].identifier] = 0.1
             new_modifiers[inputs["翻转面"].identifier] = True
@@ -1959,10 +1933,6 @@ class MMD2MMIEdgePreviewOperator(bpy.types.Operator):
             # 更换材质
             active_obj.material_slots[idx].material = new_material
 
-            if compare_version(bpy.app.version_string, '4.1.99'):
-                new_material.blend_method = 'HASHED'
-                new_material.shadow_method = 'NONE'
-
             # 删除所有的节点
             for node in new_material.node_tree.nodes:
                 new_material.node_tree.nodes.remove(node)
@@ -1992,11 +1962,7 @@ class MMD2MMIEdgePreviewOperator(bpy.types.Operator):
         new_modifiers = active_obj.modifiers.new(name="MMI-边缘预览", type='NODES')
         new_modifiers.node_group = bpy.data.node_groups["MMI-自动描边"]
 
-        # 通过接口索引设置参数
-        if compare_version(bpy.app.version_string, '4.1.99'):  # 检查版本
-            inputs = new_modifiers.node_group.inputs
-        else:
-            inputs = new_modifiers.node_group.interface.items_tree
+        inputs = new_modifiers.node_group.interface.items_tree
 
         new_modifiers[inputs["描边厚度"].identifier] = thickness_rounded
         new_modifiers[inputs["翻转面"].identifier] = use_flip_normals

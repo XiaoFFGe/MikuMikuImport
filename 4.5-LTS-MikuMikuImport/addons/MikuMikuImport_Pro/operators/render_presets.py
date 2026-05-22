@@ -1,16 +1,16 @@
-import re
 import bpy
 import os
 import random
 import string
-import mathutils
-import string
+from difflib import SequenceMatcher  # 用于计算两个序列的相似度
 
+import bpy
+import mathutils
+
+from addons.MikuMikuImport_Pro.config import __addon_name__
 from addons.MikuMikuImport_Pro.operators import mmi_object_name
 from common.i18n.i18n import i18n
-from difflib import SequenceMatcher # 用于计算两个序列的相似度
-from addons.MikuMikuImport_Pro.config import __addon_name__
-from addons.MikuMikuImport_Pro.panels import compare_version
+
 
 class Render2Operator(bpy.types.Operator):
     """Import a render preset"""
@@ -274,10 +274,7 @@ class Render2Operator(bpy.types.Operator):
                             # 检查修改器是不是几何节点
                             if modifis.type == 'NODES':
                                 # 通过接口索引设置参数
-                                if compare_version(bpy.app.version_string, '4.1.99'):  # 检查版本
-                                    inputs = modifis.node_group.inputs
-                                else:
-                                    inputs = modifis.node_group.interface.items_tree
+                                inputs = modifis.node_group.interface.items_tree
                                 # 获取材质偏移
                                 material_offsets = modifis[inputs['材质偏移'].identifier]
                                 print(f"修改器 '{modifis.name}' 的材质偏移值为: {material_offsets}")
@@ -699,11 +696,7 @@ class Render2Operator(bpy.types.Operator):
                     new_modifier = obj.modifiers.new(name="MMI-边缘预览", type='NODES')
                     new_modifier.node_group = bpy.data.node_groups["MMI-自动描边"]
 
-            # 通过接口索引设置参数
-            if compare_version(bpy.app.version_string, '4.1.99'):  # 检查版本
-                inputs = new_modifier.node_group.inputs
-            else:
-                inputs = new_modifier.node_group.interface.items_tree
+            inputs = new_modifier.node_group.interface.items_tree
 
             new_modifier[inputs["描边厚度"].identifier] = thickness_rounded
             new_modifier[inputs["翻转面"].identifier] = vertex

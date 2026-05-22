@@ -11,7 +11,6 @@ from addons.MikuMikuImport_Pro.operators.Export import SaveAsBlendOperator
 from addons.MikuMikuImport_Pro.operators.make_presets import MakePresets2Operator, \
     MakePresets3Operator, MakePresets4Operator, MakePresets6Operator, MakePres4Operator
 from addons.MikuMikuImport_Pro.operators.render_presets import Render2Operator
-from addons.MikuMikuImport_Pro.panels import compare_version
 from common.i18n.i18n import i18n
 from addons.MikuMikuImport_Pro.config import __addon_name__
 
@@ -41,11 +40,6 @@ class presetsAddonPanel(bpy.types.Panel):
             if mmi.extras_enabled:
                 layout.prop(mmi, "Post_processing_effect", text=i18n("Post-processing effect"))
                 layout.prop(mmi, "Copy_object_data", text=i18n("Copy object data"))
-                # 获取Blender的版本号
-                version = bpy.app.version_string
-                # 验证blender版本
-                if compare_version(version, '4.1.99'):
-                    layout.prop(addon_prefs, "boolean",text=i18n("Set the native Bloom"))
 
 # 描边面板, UIList
 class MMI_UL_StrokeList(bpy.types.UIList):
