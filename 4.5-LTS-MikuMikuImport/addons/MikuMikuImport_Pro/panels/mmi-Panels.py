@@ -10,10 +10,12 @@ from addons.MikuMikuImport_Pro.operators.make_presets import MakePresetsOperator
 from addons.MikuMikuImport_Pro.operators.Export import SaveAsBlendOperator
 from addons.MikuMikuImport_Pro.operators.make_presets import MakePresets2Operator, \
     MakePresets3Operator, MakePresets4Operator, MakePresets6Operator, MakePres4Operator
-from addons.MikuMikuImport_Pro.operators.render_presets import Render2Operator
+from addons.MikuMikuImport_Pro.operators.render_presets import Render2Operator, SetEyeThroughSettings
 from common.i18n.i18n import i18n
 from addons.MikuMikuImport_Pro.config import __addon_name__
+from common.types.framework import reg_order
 
+@reg_order(0)
 class presetsAddonPanel(bpy.types.Panel):
     bl_label = "Import MMD presets"
     bl_idname = "SCENE_PT_Default"
@@ -24,7 +26,6 @@ class presetsAddonPanel(bpy.types.Panel):
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
-        addon_prefs = context.preferences.addons[__addon_name__].preferences
 
         row = layout.row()
         row.scale_y = 2
@@ -83,6 +84,7 @@ class MMI_OT_UpdateStrokeList(bpy.types.Operator):
                 new_item.material = material.material
         return {'FINISHED'}
 
+@reg_order(1)
 class makeAddonPanel(bpy.types.Panel):
     bl_label = "make presets"
     bl_idname = "SCENE_PT_make_presets"
@@ -191,6 +193,7 @@ class makeAddonPanel(bpy.types.Panel):
             layout.label(text=i18n("Export"))
             layout.operator(SaveAsBlendOperator.bl_idname, icon="FILEBROWSER")
 
+@reg_order(2)
 class OtherfeaturesPanel(bpy.types.Panel):
     bl_label = "Other features"
     bl_idname = "SCENE_PT_make_presets_other_features"
@@ -233,6 +236,72 @@ class OtherfeaturesPanel(bpy.types.Panel):
                 flow.prop(mmi, "utmost_Thickness", text=i18n("utmost Thickness"))
 
                 layout.operator(Adaptivestrokes.bl_idname)
+
+# 眼透材质列表
+class MMI_UL_EyeThroughMaterialList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        layout.prop(item, "eye_boolean", text="")
+        layout.prop(item, "material")
+
+# 新增眼透材质列表
+class MMI_UL_EyeThroughMaterialListAdd(bpy.types.Operator):
+    bl_idname = "mmi.eye_through_add"
+    bl_label = "Add eye-through material"
+    bl_description = "Add the currently selected material"
+
+    def execute(self, context):
+        obj = context.object
+        if obj:
+            ml = obj.mmi_eye_through_material.add()
+            ml.material = obj.active_material
+
+            obj.mmi_eye_through_material_index = len(obj.mmi_eye_through_material) - 1 if len(obj.mmi_eye_through_material) > 0 else -1
+        return {'FINISHED'}
+
+# 删除眼透材质列表
+class MMI_UL_EyeThroughMaterialListRemove(bpy.types.Operator):
+    bl_idname = "mmi.eye_through_remove"
+    bl_label = "Remove eye-through material"
+
+    def execute(self, context):
+        obj = context.object
+        if obj:
+            obj.mmi_eye_through_material.remove(obj.mmi_eye_through_material_index)
+            if obj.mmi_eye_through_material_index >= len(obj.mmi_eye_through_material):
+                obj.mmi_eye_through_material_index = len(obj.mmi_eye_through_material) - 1 if len(obj.mmi_eye_through_material) > 0 else -1
+        return {'FINISHED'}
+
+
+# 眼透设置
+@reg_order(3)
+class MMIEyeThroughSettingsPanel(bpy.types.Panel):
+    bl_label = "Eye-through settings"
+    bl_idname = "SCENE_PT_mmi_eye_through_settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = 'UI'
+    # name of the side panel
+    bl_category = "MMI"
+    # 指定父面板的 ID
+    bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+
+        obj = context.object
+
+        if context.object is not None and context.object.type == "MESH":
+            row = layout.row()
+            row.template_list("MMI_UL_EyeThroughMaterialList", "", obj, "mmi_eye_through_material",
+                              obj, "mmi_eye_through_material_index", rows=5)
+
+            col = row.column()
+            col.operator(MMI_UL_EyeThroughMaterialListAdd.bl_idname, text="", icon='ADD')
+            col.operator(MMI_UL_EyeThroughMaterialListRemove.bl_idname, text="", icon='REMOVE')
+
+            layout.operator(SetEyeThroughSettings.bl_idname)
+
 
 class MMIGenshinPanel(bpy.types.Panel):
     bl_label = "MMI node"

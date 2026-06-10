@@ -3,7 +3,7 @@ from bpy.app.handlers import persistent
 
 from .config import __addon_name__
 from .i18n.dictionary import dictionary
-from .propertygroup.MMI_PropertyGroup import MMI_property, MMIImageItem, MMIStrokeitem
+from .propertygroup.MMI_PropertyGroup import MMI_property, MMIImageItem, MMIStrokeitem, MMIEyeThroughMaterial
 from ...common.class_loader import auto_load
 from ...common.class_loader.auto_load import add_properties, remove_properties
 from ...common.i18n.dictionary import common_dictionary
@@ -14,7 +14,7 @@ bl_info = {
     "name": "MikuMikuImport Pro",
     "author": "小峰峰哥l",
     "blender": (3, 6, 0),
-    "version": (4, 5, 4),
+    "version": (4, 5, 5),
     "description": "导入MMD模型渲染预设",
     "tracker_url": "https://space.bilibili.com/2109816568?spm_id_from=333.1007.0.0",
     "support": "COMMUNITY",
@@ -43,12 +43,20 @@ def register():
     auto_load.init()
     auto_load.register()
     add_properties(_addon_properties)
+
     bpy.utils.register_class(MMI_property)
     bpy.types.Object.mmi = bpy.props.PointerProperty(type=MMI_property)
+
     bpy.utils.register_class(MMIImageItem)
     bpy.types.Scene.mmi_images = bpy.props.CollectionProperty(type=MMIImageItem)
+
     bpy.utils.register_class(MMIStrokeitem)
     bpy.types.Object.mmi_stroke = bpy.props.CollectionProperty(type=MMIStrokeitem)
+
+    bpy.utils.register_class(MMIEyeThroughMaterial)
+    bpy.types.Object.mmi_eye_through_material = bpy.props.CollectionProperty(type=MMIEyeThroughMaterial)
+    bpy.types.Object.mmi_eye_through_material_index = bpy.props.IntProperty(default=0)
+
     # 注册更新列表的回调函数
     bpy.app.handlers.depsgraph_update_post.append(update_stroke)
 
@@ -67,12 +75,20 @@ def unregister():
     # 注销类
     auto_load.unregister()
     remove_properties(_addon_properties)
+
     del bpy.types.Object.mmi
     bpy.utils.unregister_class(MMI_property)
+
     del bpy.types.Scene.mmi_images
     bpy.utils.unregister_class(MMIImageItem)
+
     del bpy.types.Object.mmi_stroke
     bpy.utils.unregister_class(MMIStrokeitem)
+
+    del bpy.types.Object.mmi_eye_through_material
+    bpy.utils.unregister_class(MMIEyeThroughMaterial)
+    del bpy.types.Object.mmi_eye_through_material_index
+
     # 注销更新列表的回调函数
     bpy.app.handlers.depsgraph_update_post.remove(update_stroke)
 

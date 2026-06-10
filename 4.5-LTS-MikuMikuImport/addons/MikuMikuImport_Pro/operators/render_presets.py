@@ -724,3 +724,214 @@ class Render2Operator(bpy.types.Operator):
         layout.label(text=i18n('Material matching:'))
         layout.prop(self, 'Fuzzy', text=i18n('Matching Pattern'), expand=True)
 
+# 为选中模型设置眼透
+class SetEyeThroughSettings(bpy.types.Operator):
+    bl_idname = "mmi.set_eye_through_settings"
+    bl_label = "Set eye transparency"
+    bl_description = "Set eye transparency for the selected model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object and not context.active_object.mmi.is_eye_obj
+
+    def execute(self, context):
+
+        global collection, layer
+
+        active_obj = bpy.context.active_object
+
+        # 当前py 文件所在目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # 构建完整路径
+        filepath = os.path.join(current_dir, "bhp.blend")
+
+        def Additional_actions(A, B):
+            # 指定要追加的集合的名称
+            collection_name = A
+            directory = B
+
+            # 构建集合的完整路径
+            full_filepath = os.path.join(filepath, directory, collection_name)
+            # 执行追加操作
+            bpy.ops.wm.append(
+                filepath=full_filepath,
+                directory=os.path.join(filepath, directory),
+                filename=collection_name
+            )
+
+        # 检查当前场景是否存在名为 "MMI-眼透" 的几何节点组
+        if "MMI-眼透" not in bpy.data.node_groups:
+            Additional_actions("MMI-眼透", "NodeTree")
+
+        # 检查当前场景是否有集合名称包含 "MMI眼透"
+        has_mmi = any("MMI眼透" in col.name for col in bpy.context.scene.collection.children)
+
+        if not has_mmi:
+            # 新建集合
+            collection = bpy.data.collections.new("MMI眼透")
+            # 链接到当前场景的根集合下
+            bpy.context.scene.collection.children.link(collection)
+        else:
+            # 如果集合已存在，直接使用
+            for col in bpy.context.scene.collection.children:
+                if  "MMI眼透" in col.name:
+                    collection = col
+                    break  # 找到即停
+
+        coll2 = None
+        coll2_new_bool = True
+
+        for col in collection.children:
+
+            if  f"MMI眼透-{active_obj.name}" in col.name:
+                coll2 = col
+                coll2_new_bool = False
+                break  # 找到即停
+
+        if coll2_new_bool:
+            # 新建集合
+            new_collection = bpy.data.collections.new(f"MMI眼透-{active_obj.name}")
+            # 链接到MMI眼透集合下
+            collection.children.link(new_collection)
+            coll2 = new_collection
+
+        eye_through_list = active_obj.mmi_eye_through_material
+
+        for ml in eye_through_list:
+            if ml.material:
+
+                boll = True
+                new_obj = None
+
+                for objs in coll2.objects:
+                    if objs.name in f"MMI_眼透-{ml.material.name}":
+                        boll = False
+                        new_obj = objs
+                        break
+
+                if boll:
+                    # 新建MESH对象
+                    mesh_data = bpy.data.meshes.new(name=f"MMI_眼透-{ml.material.name}")
+                    new_obj = bpy.data.objects.new(name=f"MMI_眼透-{ml.material.name}", object_data=mesh_data)
+                    # 链接到集合
+                    coll2.objects.link(new_obj)
+
+                if new_obj:
+                    # 检查对象是否已经有名为"MMI-设置眼透"的几何节点修改器
+                    if "MMI-设置眼透" not in new_obj.modifiers:
+                        # 如果没有，添加一个Geometry Nodes修改器
+                        new_modifier = new_obj.modifiers.new(name="MMI-设置眼透", type='NODES')
+                        new_modifier.node_group = bpy.data.node_groups["MMI-眼透"]
+                        inputs = new_modifier.node_group.interface.items_tree
+
+                        new_modifier[inputs["Object"].identifier] = active_obj
+                        new_modifier[inputs["Material"].identifier] = ml.material
+
+                        new_obj.mmi.is_eye_obj = True
+
+        # 检查当前场景是否存在名为 "MMI-眼透" 的视图层
+        if "MMI-眼透" not in bpy.context.scene.view_layers:
+            layer = bpy.context.scene.view_layers.new("MMI-眼透")
+        else:
+            layer = bpy.context.scene.view_layers["MMI-眼透"]
+
+        for col in layer.layer_collection.children:
+            if col.name != "MMI眼透":
+                col.exclude = True
+
+        for obj in bpy.context.view_layer.layer_collection.children:
+            if obj.name == "MMI眼透":
+                obj.exclude = True
+                break
+
+        if "MMI_EYE_X" not in layer.aovs:
+            new_aov = layer.aovs.add()
+            new_aov.name = "MMI_EYE_X"
+        else:
+            new_aov = layer.aovs["MMI_EYE_X"]
+
+        new_aov.type = "COLOR"
+
+        # 获取材质槽
+        material_slots = active_obj.material_slots
+
+        for ml in eye_through_list:
+            if ml.material:
+                for slot in material_slots:
+                    if slot.material == ml.material:
+                        # 获取节点树
+                        node_tree = slot.material.node_tree
+                        # 遍历节点树
+                        for node in node_tree.nodes:
+                            if node.type == 'OUTPUT_MATERIAL':
+                                # 获取上一个节点
+                                input1 = node.inputs.get('Surface')
+                                if input1:
+                                    # 顺着这个节点的输入端口，找到连接的节点
+                                    connected_nodes = [link.from_node for link in input1.links] # 获取所有连接的节点 一条线（link）有两个端点：from_node：线从哪里来（起始节点）to_node：线到哪里去（目标节点）
+
+                                    # 过滤出连接到输出的节点
+                                    for connected_node in connected_nodes:
+                                        if connected_node:
+
+                                            # 检查当前节点树是否存在"MMI_{ml.material.name}_AOV"节点
+                                            if f"MMI_{ml.material.name}_AOV" not in node_tree.nodes:
+
+                                                # 新建AOV节点
+                                                new_aov_node = node_tree.nodes.new(type='ShaderNodeOutputAOV')
+                                                new_aov_node.name = f"MMI_{ml.material.name}_AOV"
+                                                new_aov_node.location = (node.location.x, node.location.y+150)
+                                                new_aov_node.aov_name = "MMI_EYE_X"
+                                            else:
+                                                new_aov_node = node_tree.nodes.get(f"MMI_{ml.material.name}_AOV")
+
+                                            if new_aov_node:
+                                                # 连接AOV节点到输出节点
+                                                node_tree.links.new(new_aov_node.inputs[0], connected_node.outputs[0])
+
+                                                if ml.eye_boolean:
+                                                    # 删除AOV节点
+                                                    node_tree.nodes.remove(new_aov_node)
+
+                                            break
+                            break
+
+        # 1. 先提取出 eye_through_list 中的材质本体（Material 对象）
+        eye_materials = {ml.material for ml in eye_through_list}  # 用集合，查找更快
+
+        # 2. 收集要删除的
+        to_remove = []
+        ml_aov_remove = []
+
+        for obj in coll2.objects:
+            should_keep = False
+            mat = None
+
+            if obj.modifiers:
+                for mod in obj.modifiers:
+                    if mod.type == 'NODES' and mod.node_group:
+                        # 获取 "Material" 输入接口的值
+                        input_id = mod.node_group.interface.items_tree["Material"].identifier
+                        mat = mod[input_id]
+
+                        # 如果材质在保留列表中，标记为保留
+                        if mat in eye_materials:
+                            should_keep = True
+                            break  # 只要找到一个匹配的修改器，就保留该物体
+
+            if not should_keep:
+                to_remove.append(obj)
+                ml_aov_remove.append(mat)
+
+        # 3. 删除
+        for obj in to_remove:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+        # 4. 删除AOV节点
+        for mat in ml_aov_remove:
+            if mat:
+                mat.node_tree.nodes.remove(mat.node_tree.nodes.get(f"MMI_{mat.name}_AOV"))
+
+        return {'FINISHED'}

@@ -917,11 +917,16 @@ class MakePres4Operator(bpy.types.Operator):
         bpy.context.scene.view_settings.look = 'None'
 
         # 设置合成通道
-        bpy.context.scene.view_layers["ViewLayer"].use_pass_z = True
-        bpy.ops.scene.view_layer_add_aov()
-        view_layer = bpy.context.scene.view_layers["ViewLayer"]
-        new_aov = view_layer.aovs[-1]  # 新添加的AOV
-        new_aov.name = "边缘光数据"
+        bpy.context.view_layer.use_pass_z = True
+        view_layer = bpy.context.view_layer
+        # AOV "边缘光数据" 是否存在
+        if "边缘光数据" in view_layer.aovs:
+            new_aov = view_layer.aovs["边缘光数据"]
+        else:
+            # 添加新的AOV
+            bpy.ops.scene.view_layer_add_aov()
+            new_aov = view_layer.aovs[-1]  # 新添加的AOV
+            new_aov.name = "边缘光数据"
 
         bpy.context.area.ui_type = 'CompositorNodeTree'
 

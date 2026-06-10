@@ -26,6 +26,13 @@ class MMIImageItem(bpy.types.PropertyGroup):
 
 
 class MMI_property(bpy.types.PropertyGroup):
+
+    # 是否是眼透Object
+    is_eye_obj: BoolProperty(
+        name="Is Eye Object",
+        default=False
+    )
+
     extras_enabled: BoolProperty(
         name="Extras Enabled",
         default=False
@@ -135,4 +142,17 @@ class MMIStrokeitem(bpy.types.PropertyGroup):
     material: bpy.props.PointerProperty(
         type=bpy.types.Material,
         name="Material",
+    )
+
+# 眼透材质
+class MMIEyeThroughMaterial(bpy.types.PropertyGroup):
+    material: bpy.props.PointerProperty(
+        type=bpy.types.Material,
+        name="Material",
+    )
+
+    eye_boolean: BoolProperty(
+        name="",
+        description="是否遮罩眼透材质",
+        default=False
     )
