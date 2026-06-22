@@ -13,8 +13,8 @@ from ...common.i18n.i18n import load_dictionary
 bl_info = {
     "name": "MikuMikuImport Pro",
     "author": "小峰峰哥l",
-    "blender": (3, 6, 0),
-    "version": (4, 5, 5),
+    "blender": (4, 2, 0),
+    "version": (4, 5, 6),
     "description": "导入MMD模型渲染预设",
     "tracker_url": "https://space.bilibili.com/2109816568?spm_id_from=333.1007.0.0",
     "support": "COMMUNITY",
