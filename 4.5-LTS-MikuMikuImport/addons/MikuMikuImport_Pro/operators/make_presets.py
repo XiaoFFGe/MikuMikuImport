@@ -1695,6 +1695,8 @@ class EdgePreviewOperator(bpy.types.Operator):
                 new_material = bpy.data.materials.get('mmi-edge|' + material_name)
                 new_material.use_nodes = True
 
+            new_material.surface_render_method = 'BLENDED' # 启用混合渲染
+
             # 删除所有的节点
             for node in new_material.node_tree.nodes:
                 new_material.node_tree.nodes.remove(node)
