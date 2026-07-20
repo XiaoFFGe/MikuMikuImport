@@ -267,7 +267,6 @@ class MakePresets7Operator(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
 class MakePresets9Operator(bpy.types.Operator):
     '''genshin presets'''
     bl_idname = "object.genshin_presets_ops"
@@ -346,10 +345,11 @@ class MakePresets9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Diffuse_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Diffuse)
-                # 替换贴图
-                Diffuse_node.image = new_image
+                if Diffuse_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Diffuse)
+                    # 替换贴图
+                    Diffuse_node.image = new_image
                 # 修改Alpha通道为通道打包
                 Diffuse_node.image.alpha_mode = 'CHANNEL_PACKED'
         # ————————————————————————————————————————————————————————————————————————————
@@ -362,10 +362,11 @@ class MakePresets9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Lightmap_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Lightmap)
-                # 替换贴图
-                Lightmap_node.image = new_image
+                if Lightmap_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Lightmap)
+                    # 替换贴图
+                    Lightmap_node.image = new_image
                 # 修改Alpha通道为通道打包
                 Lightmap_node.image.alpha_mode = 'CHANNEL_PACKED'
                 # 将色彩空间设置为'Non - Color'
@@ -380,10 +381,11 @@ class MakePresets9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Shadow_Ramp_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Shadow_Ramp)
-                # 替换贴图
-                Shadow_Ramp_node.image = new_image
+                if Shadow_Ramp_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Shadow_Ramp)
+                    # 替换贴图
+                    Shadow_Ramp_node.image = new_image
         # ——————————————————————————————————————————————————————————————————————————————
         if NormalMap is not None:
             # 遍历节点列表来找到名称为Normal Map的节点：
@@ -394,10 +396,11 @@ class MakePresets9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if NormalMap_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(NormalMap)
-                # 替换贴图
-                NormalMap_node.image = new_image
+                if NormalMap_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(NormalMap)
+                    # 替换贴图
+                    NormalMap_node.image = new_image
                 # 将色彩空间设置为'Non - Color'
                 NormalMap_node.image.colorspace_settings.name = 'Non-Color'
         # ————————————————————————————————————————————————————————————————————————————————————————
@@ -407,7 +410,6 @@ class MakePresets9Operator(bpy.types.Operator):
         context.object.active_material_index = array + 1
         bpy.context.object.active_material.preview_render_type = 'FLAT'
         return {'FINISHED'}
-
 
 class MakePrehts9Operator(bpy.types.Operator):
     '''genshin presets'''
@@ -487,10 +489,11 @@ class MakePrehts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Diffuse_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Diffuse)
-                # 替换贴图
-                Diffuse_node.image = new_image
+                if Diffuse_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Diffuse)
+                    # 替换贴图
+                    Diffuse_node.image = new_image
                 # 修改Alpha通道为通道打包
                 Diffuse_node.image.alpha_mode = 'CHANNEL_PACKED'
         # ————————————————————————————————————————————————————————————————————————————
@@ -503,10 +506,11 @@ class MakePrehts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Lightmap_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Lightmap)
-                # 替换贴图
-                Lightmap_node.image = new_image
+                if Lightmap_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Lightmap)
+                    # 替换贴图
+                    Lightmap_node.image = new_image
                 # 修改Alpha通道为通道打包
                 Lightmap_node.image.alpha_mode = 'CHANNEL_PACKED'
                 # 将色彩空间设置为'Non - Color'
@@ -521,10 +525,11 @@ class MakePrehts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Shadow_Ramp_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Shadow_Ramp)
-                # 替换贴图
-                Shadow_Ramp_node.image = new_image
+                if Shadow_Ramp_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Shadow_Ramp)
+                    # 替换贴图
+                    Shadow_Ramp_node.image = new_image
         # ——————————————————————————————————————————————————————————————————————————————
         if NormalMap is not None:
             # 遍历节点列表来找到名称为Normal Map的节点：
@@ -535,10 +540,11 @@ class MakePrehts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if NormalMap_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(NormalMap)
-                # 替换贴图
-                NormalMap_node.image = new_image
+                if NormalMap_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(NormalMap)
+                    # 替换贴图
+                    NormalMap_node.image = new_image
                 # 将色彩空间设置为'Non - Color'
                 NormalMap_node.image.colorspace_settings.name = 'Non-Color'
         # ————————————————————————————————————————————————————————————————————————————————————————
@@ -548,7 +554,6 @@ class MakePrehts9Operator(bpy.types.Operator):
         context.object.active_material_index = array + 1
         bpy.context.object.active_material.preview_render_type = 'FLAT'
         return {'FINISHED'}
-
 
 class MakePrehkhts9Operator(bpy.types.Operator):
     '''genshin presets'''
@@ -630,10 +635,11 @@ class MakePrehkhts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Diffuse_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Diffuse)
-                # 替换贴图
-                Diffuse_node.image = new_image
+                if Diffuse_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Diffuse)
+                    # 替换贴图
+                    Diffuse_node.image = new_image
                 # 修改Alpha通道为通道打包
                 Diffuse_node.image.alpha_mode = 'CHANNEL_PACKED'
         # ——————————————————————————————————————————————————————————————————————
@@ -646,10 +652,11 @@ class MakePrehkhts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if Shadow_Ramp_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(Shadow_Ramp)
-                # 替换贴图
-                Shadow_Ramp_node.image = new_image
+                if Shadow_Ramp_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(Shadow_Ramp)
+                    # 替换贴图
+                    Shadow_Ramp_node.image = new_image
         # ——————————————————————————————————————————————————————————————————————
 
         # 遍历节点列表来找到名称为SDF的节点：
@@ -673,10 +680,11 @@ class MakePrehkhts9Operator(bpy.types.Operator):
                     break
             # 修改节点
             if SDF_node:
-                # 加载新的贴图
-                new_image = bpy.data.images.load(SDF)
-                # 替换贴图
-                SDF_node.image = new_image
+                if SDF_node.image is None:
+                    # 加载新的贴图
+                    new_image = bpy.data.images.load(SDF)
+                    # 替换贴图
+                    SDF_node.image = new_image
                 # 将色彩空间设置为'Non-Color'
                 SDF_node.image.colorspace_settings.name = 'Non-Color'
 
@@ -752,7 +760,6 @@ class MakePrehtsManualOperator(bpy.types.Operator):
         context.object.active_material_index = array + 1
         bpy.context.object.active_material.preview_render_type = 'FLAT'
         return {'FINISHED'}
-
 
 
 class MakePrytyOperator(bpy.types.Operator):
@@ -1294,6 +1301,10 @@ class MakePrehOperator(bpy.types.Operator):
                         bpy.ops.object.mdts_preset_ops()
                         mmi = context.object.mmi
                         mmi.re_obj = True
+                        # 旋转物体
+                        obj.rotation_euler[0] = -90 * 3.1415926 / 180
+
+                # Name the collection you're in【MMD预设】
                 bpy.ops.object.make_presets_ops()
 
             else:
@@ -1704,7 +1715,7 @@ class EdgePreviewOperator(bpy.types.Operator):
             # 获取节点树
             node_tree = new_material.node_tree
 
-            t = ['颜2', '面2', '二重', '睫', '口舌','齿', '眉', '白目', '目', '星目', '口', '舌', '眉睫', '目影', '目光', '瞳孔']
+            t = ['颜2', '面2', '二重', '睫', '口舌','齿', '眉', '白目', '目', '星目', '口', '舌', '眉睫', '目影', '目光', '瞳孔', '睫眉']
 
             u = 1
 
@@ -2140,6 +2151,7 @@ class DownloadPresetsOperator(bpy.types.Operator):
     '''Download presets'''
     bl_idname = "object.download_presets_ops"
     bl_label = "Download presets"
+    bl_description = "下载预设，点击后会打开MMI仓库，如果打不开，请用加速器（如Watt Toolkit）打开"
     # 确保在操作之前备份数据，用户撤销操作时可以恢复
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -2148,5 +2160,26 @@ class DownloadPresetsOperator(bpy.types.Operator):
         URL = "https://github.com/XiaoFFGe/MikuMikuImport/tree/main/"
 
         webbrowser.open(URL)
+
+        return {'FINISHED'}
+
+# 删除模型顶点
+class DeleteModelVerticesOperator(bpy.types.Operator):
+    '''Delete model vertices'''
+    bl_idname = "object.delete_model_vertices_ops"
+    bl_label = "Delete model vertices"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        obj = context.active_object
+        if obj and obj.type == 'MESH':
+            # 编辑模式
+            bpy.ops.object.mode_set(mode='EDIT')
+            # 删除顶点
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.delete(type='VERT')
+
+            # 切换回对象模式
+            bpy.ops.object.mode_set(mode='OBJECT')
 
         return {'FINISHED'}

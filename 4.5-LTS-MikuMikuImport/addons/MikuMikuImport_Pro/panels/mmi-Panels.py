@@ -6,7 +6,7 @@ from addons.MikuMikuImport_Pro.operators.make_presets import MakePresetsOperator
     MakePrehOperator, MakePdtysOperator, MakePdtyOperator, Adaptivestrokes, FixAMDgraphicscardsynthesizerbug, \
     EdgePreviewOperator, RevokeEdgePreviewOperator, MMD2MMIEdgePreviewOperator, MakePresets7Operator, \
     MatchingmaterialsMMDmodelOperator, ConvertOldNameToNewNameOperator, blender_batch_process_operator, \
-    DownloadPresetsOperator, MakePrehtsManualOperator
+    DownloadPresetsOperator, MakePrehtsManualOperator, DeleteModelVerticesOperator
 from addons.MikuMikuImport_Pro.operators.Export import SaveAsBlendOperator
 from addons.MikuMikuImport_Pro.operators.make_presets import MakePresets2Operator, \
     MakePresets3Operator, MakePresets4Operator, MakePresets6Operator, MakePres4Operator
@@ -137,6 +137,8 @@ class makeAddonPanel(bpy.types.Panel):
                     layout.operator(MakePresets4Operator.bl_idname)
                     layout.operator(MakePresets6Operator.bl_idname)
                     layout.operator(MakePdtyOperator.bl_idname)
+                    layout.operator(DeleteModelVerticesOperator.bl_idname)
+                    # 新版命名
                     layout.operator(ConvertOldNameToNewNameOperator.bl_idname)
                     layout.operator(blender_batch_process_operator.bl_idname)
 

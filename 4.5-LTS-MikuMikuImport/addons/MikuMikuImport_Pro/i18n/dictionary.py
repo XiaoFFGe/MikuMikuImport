@@ -21,6 +21,7 @@ dictionary = {
         ("Operator", "Name the bones"): "命名骨骼",
         ("Operator", "Name the SDF controller"): "命名SDF控制器",
         ("Operator", "Name the MMD root object"): "命名MMD根物体",
+        ("Operator", "Delete model vertices"): "删除模型顶点",
         ("*", "Name the model"): "命名模型",
         ("*", "Name the bones"): "命名骨骼",
         ("*", "Render presets"): "渲染预设",
