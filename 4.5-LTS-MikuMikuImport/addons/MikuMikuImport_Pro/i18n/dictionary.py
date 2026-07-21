@@ -27,6 +27,7 @@ dictionary = {
         ("*", "Render presets"): "渲染预设",
         ("*", "Name the SDF controller"): "命名SDF控制器",
         ("", "Extras"): "额外选项",
+        ("", "Edge light"): "边缘光",
         ("", "Face Shadow_Ramp"): "脸部SR",
         ("", "Post-processing effect"): "后期效果",
         ("Operator", "Post-processing effect"): "后期效果",

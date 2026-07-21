@@ -15,33 +15,6 @@ from common.i18n.i18n import i18n
 from addons.MikuMikuImport_Pro.config import __addon_name__
 from common.types.framework import reg_order
 
-@reg_order(0)
-class presetsAddonPanel(bpy.types.Panel):
-    bl_label = "Import MMD presets"
-    bl_idname = "SCENE_PT_Default"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = 'UI'
-    # name of the side panel
-    bl_category = "MMI"
-
-    def draw(self, context: bpy.types.Context):
-        layout = self.layout
-
-        row = layout.row()
-        row.scale_y = 2
-        row.operator(Render2Operator.bl_idname, text="Import a render preset", icon='SHADING_RENDERED')
-
-        obj = context.object
-        if obj:
-            mmi = obj.mmi
-
-            layout.operator(DownloadPresetsOperator.bl_idname, icon='IMPORT')
-
-            layout.prop(mmi, "extras_enabled", text=i18n("Extras"), toggle=True, icon="PREFERENCES")
-            if mmi.extras_enabled:
-                layout.prop(mmi, "Post_processing_effect", text=i18n("Post-processing effect"))
-                layout.prop(mmi, "Copy_object_data", text=i18n("Copy object data"))
-
 # 描边面板, UIList
 class MMI_UL_StrokeList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
@@ -84,7 +57,80 @@ class MMI_OT_UpdateStrokeList(bpy.types.Operator):
                 new_item.material = material.material
         return {'FINISHED'}
 
+
+@reg_order(0)
+class presetsAddonPanel(bpy.types.Panel):
+    bl_label = "Import MMD presets"
+    bl_idname = "SCENE_PT_Default"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = 'UI'
+    # name of the side panel
+    bl_category = "MMI"
+
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+
+        row = layout.row()
+        row.scale_y = 2
+        row.operator(Render2Operator.bl_idname, text="Import a render preset", icon='SHADING_RENDERED')
+
+        obj = context.object
+        if obj:
+            mmi = obj.mmi
+
+            layout.operator(DownloadPresetsOperator.bl_idname, icon='IMPORT')
+
+            layout.prop(mmi, "extras_enabled", text=i18n("Extras"), toggle=True, icon="PREFERENCES")
+            if mmi.extras_enabled:
+                layout.prop(mmi, "Post_processing_effect", text=i18n("Post-processing effect"))
+                layout.prop(mmi, "Copy_object_data", text=i18n("Copy object data"))
+
 @reg_order(1)
+class Post_processing_effect(bpy.types.Panel):
+    bl_label = "Post-processing effect"
+    bl_idname = "SCENE_PT_post_processing_effect"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = 'UI'
+    # name of the side panel
+    bl_category = "MMI"
+    # 指定父面板的 ID
+    bl_parent_id = "SCENE_PT_Default"
+
+    # 绘制函数
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+        scene = bpy.context.scene
+
+        # 仅当场景使用节点时显示
+        if scene.use_nodes:
+            # 获取节点树
+            node_tree = scene.node_tree
+
+            # 遍历节点树
+            for node in node_tree.nodes:
+                if node.type == "GROUP":
+
+                    if node.name == "后期处理":
+                        for idx, input in enumerate(node.inputs):
+                            if not input.hide_value:
+                                if input.name == 'Maximum':
+                                    if node.inputs[idx-1].default_value is not False:
+                                        layout.prop(input, "default_value", text=input.name)
+                                elif idx != 0:
+                                    layout.prop(input, "default_value", text=input.name)
+                            else:
+                                layout.label(text=input.name)
+
+                    if node.name == "边缘光深度":
+                        layout.label(text=i18n("Edge light"))
+                        for idx, input in enumerate(node.inputs):
+                            if not input.hide_value:
+                                if idx not in [0, 1, 2]:
+                                    layout.prop(input, "default_value", text=input.name)
+                            else:
+                                layout.label(text=input.name)
+
+@reg_order(2)
 class makeAddonPanel(bpy.types.Panel):
     bl_label = "make presets"
     bl_idname = "SCENE_PT_make_presets"
@@ -94,8 +140,6 @@ class makeAddonPanel(bpy.types.Panel):
     bl_category = "MMI"
     # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_Default"
-    # 折叠面板
-    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
@@ -195,7 +239,7 @@ class makeAddonPanel(bpy.types.Panel):
             layout.label(text=i18n("Export"))
             layout.operator(SaveAsBlendOperator.bl_idname, icon="FILEBROWSER")
 
-@reg_order(2)
+@reg_order(3)
 class OtherfeaturesPanel(bpy.types.Panel):
     bl_label = "Other features"
     bl_idname = "SCENE_PT_make_presets_other_features"
@@ -203,10 +247,7 @@ class OtherfeaturesPanel(bpy.types.Panel):
     bl_region_type = 'UI'
     # name of the side panel
     bl_category = "MMI"
-    # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_Default"
-    # 折叠面板
-    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
@@ -238,6 +279,33 @@ class OtherfeaturesPanel(bpy.types.Panel):
                 flow.prop(mmi, "utmost_Thickness", text=i18n("utmost Thickness"))
 
                 layout.operator(Adaptivestrokes.bl_idname)
+
+@reg_order(4)
+class MMIEyeThroughSettingsPanel(bpy.types.Panel): # 眼透设置
+    bl_label = "Eye-through settings"
+    bl_idname = "SCENE_PT_mmi_eye_through_settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = 'UI'
+    # name of the side panel
+    bl_category = "MMI"
+    # 指定父面板的 ID
+    bl_parent_id = "SCENE_PT_Default"
+
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+
+        obj = context.object
+
+        if context.object is not None and context.object.type == "MESH":
+            row = layout.row()
+            row.template_list("MMI_UL_EyeThroughMaterialList", "", obj, "mmi_eye_through_material",
+                              obj, "mmi_eye_through_material_index", rows=5)
+
+            col = row.column()
+            col.operator(MMI_UL_EyeThroughMaterialListAdd.bl_idname, text="", icon='ADD')
+            col.operator(MMI_UL_EyeThroughMaterialListRemove.bl_idname, text="", icon='REMOVE')
+
+            layout.operator(SetEyeThroughSettings.bl_idname)
 
 # 眼透材质列表
 class MMI_UL_EyeThroughMaterialList(bpy.types.UIList):
@@ -272,37 +340,6 @@ class MMI_UL_EyeThroughMaterialListRemove(bpy.types.Operator):
             if obj.mmi_eye_through_material_index >= len(obj.mmi_eye_through_material):
                 obj.mmi_eye_through_material_index = len(obj.mmi_eye_through_material) - 1 if len(obj.mmi_eye_through_material) > 0 else -1
         return {'FINISHED'}
-
-
-# 眼透设置
-@reg_order(3)
-class MMIEyeThroughSettingsPanel(bpy.types.Panel):
-    bl_label = "Eye-through settings"
-    bl_idname = "SCENE_PT_mmi_eye_through_settings"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = 'UI'
-    # name of the side panel
-    bl_category = "MMI"
-    # 指定父面板的 ID
-    bl_parent_id = "SCENE_PT_Default"
-    # 折叠面板
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context: bpy.types.Context):
-        layout = self.layout
-
-        obj = context.object
-
-        if context.object is not None and context.object.type == "MESH":
-            row = layout.row()
-            row.template_list("MMI_UL_EyeThroughMaterialList", "", obj, "mmi_eye_through_material",
-                              obj, "mmi_eye_through_material_index", rows=5)
-
-            col = row.column()
-            col.operator(MMI_UL_EyeThroughMaterialListAdd.bl_idname, text="", icon='ADD')
-            col.operator(MMI_UL_EyeThroughMaterialListRemove.bl_idname, text="", icon='REMOVE')
-
-            layout.operator(SetEyeThroughSettings.bl_idname)
 
 
 class MMIGenshinPanel(bpy.types.Panel):
@@ -369,8 +406,7 @@ class AutomaticMatchingPanel(bpy.types.Panel):
     bl_category = "MMI"
     # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_make_presets"
-    # 折叠面板
-    bl_options = {'DEFAULT_CLOSED'}
+
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
