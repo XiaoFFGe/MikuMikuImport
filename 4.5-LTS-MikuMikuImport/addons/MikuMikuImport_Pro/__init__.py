@@ -14,7 +14,7 @@ bl_info = {
     "name": "MikuMikuImport Pro",
     "author": "小峰峰哥l",
     "blender": (4, 2, 0),
-    "version": (4, 5, 9),
+    "version": (4, 5, 10),
     "description": "导入MMD模型渲染预设",
     "tracker_url": "https://space.bilibili.com/2109816568?spm_id_from=333.1007.0.0",
     "support": "COMMUNITY",
@@ -29,6 +29,9 @@ _last_selected_objs = set()
 @persistent
 def update_stroke(scene):
     global _last_selected_objs
+    # 在某些上下文中（如文件加载），bpy.context 可能没有 selected_objects 属性
+    if not hasattr(bpy.context, 'selected_objects'):
+        return
     # 获取当前选中对象的名称集合
     current_selected = {obj.name for obj in bpy.context.selected_objects}
     # 检查选择状态是否变化

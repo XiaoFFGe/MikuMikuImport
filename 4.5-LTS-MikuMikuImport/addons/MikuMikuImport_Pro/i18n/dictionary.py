@@ -70,12 +70,21 @@ dictionary = {
         ("", "SR sampling"): "SR采样",
         ("", "Matching Pattern"): "匹配模式",
         ("Operator", "Convert old name to new name"): "旧版命名转换为新版命名",
-        ("Operator", "Convert all .blend files to new naming format"): "批量转换当前目录中的 blend 文件至新版命名",
+        ("Operator", "Convert all .blend files to new naming format"): "批量转换当前目录中的 blend 文件至新版格式",
+        ("Operator", "Normalize node group name"): "规格化节点组名称",
+        ("Operator", "Add material tone mapping node"): "添加材质色调映射",
+        ("*", "Model Material Settings"): "模型材质设置",
+        ("", "Tone Mapping"): "色调映射",
+        ("", "impact"): "影响",
         ("Operator", "Download presets"): "下载预设",
         ("", "Preset Template"): "预设模板",
+        ("", "Shadow Mapping Range"): "阴影映射范围",
+        ("", "Lambert Shadow"): "兰伯特阴影",
+        ("Operator", "Clamp Lambertian Shadow"): "钳制兰伯特阴影",
+        ("", "Flexibility"): "柔度",
+        ("", "offset"): "偏移",
     }
 }
-
 dictionary = preprocess_dictionary(dictionary)
 
 dictionary["zh_HANS"] = dictionary["zh_CN"]

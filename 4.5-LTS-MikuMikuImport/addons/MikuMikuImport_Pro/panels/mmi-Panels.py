@@ -6,7 +6,8 @@ from addons.MikuMikuImport_Pro.operators.make_presets import MakePresetsOperator
     MakePrehOperator, MakePdtysOperator, MakePdtyOperator, Adaptivestrokes, FixAMDgraphicscardsynthesizerbug, \
     EdgePreviewOperator, RevokeEdgePreviewOperator, MMD2MMIEdgePreviewOperator, MakePresets7Operator, \
     MatchingmaterialsMMDmodelOperator, ConvertOldNameToNewNameOperator, blender_batch_process_operator, \
-    DownloadPresetsOperator, MakePrehtsManualOperator, DeleteModelVerticesOperator
+    DownloadPresetsOperator, MakePrehtsManualOperator, DeleteModelVerticesOperator, NormalizeNodeGroupNameOperator, \
+    AddToneMappingNode, Make_Lambertian_Shadow
 from addons.MikuMikuImport_Pro.operators.Export import SaveAsBlendOperator
 from addons.MikuMikuImport_Pro.operators.make_presets import MakePresets2Operator, \
     MakePresets3Operator, MakePresets4Operator, MakePresets6Operator, MakePres4Operator
@@ -95,6 +96,8 @@ class Post_processing_effect(bpy.types.Panel):
     bl_category = "MMI"
     # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
 
     # 绘制函数
     def draw(self, context: bpy.types.Context):
@@ -108,14 +111,15 @@ class Post_processing_effect(bpy.types.Panel):
 
             # 遍历节点树
             for node in node_tree.nodes:
-                if node.type == "GROUP":
 
+                if node.type == "GROUP":
                     if node.name == "后期处理":
                         for idx, input in enumerate(node.inputs):
                             if not input.hide_value:
                                 if input.name == 'Maximum':
-                                    if node.inputs[idx-1].default_value is not False:
-                                        layout.prop(input, "default_value", text=input.name)
+                                    col = layout.column()
+                                    col.enabled = node.inputs[idx-1].default_value is not False
+                                    col.prop(input, "default_value", text=input.name)
                                 elif idx != 0:
                                     layout.prop(input, "default_value", text=input.name)
                             else:
@@ -131,6 +135,94 @@ class Post_processing_effect(bpy.types.Panel):
                                 layout.label(text=input.name)
 
 @reg_order(2)
+class ColoringSettings(bpy.types.Panel):
+    bl_label = "Model Material Settings"
+    bl_idname = "SCENE_PT_model_material_settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = 'UI'
+    # name of the side panel
+    bl_category = "MMI"
+    # 指定父面板的 ID
+    bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context: bpy.types.Context):
+
+        def find_light_node_group(node_tree, node_name):
+            """递归寻找名为 node_name 的节点组"""
+
+            for node1 in node_tree.nodes:
+                if node1.name == node_name and node1.type == 'GROUP':
+                    return node1
+
+                if node1.type == 'GROUP':
+                    group = node1.node_tree
+                    if group:
+                        # 递归进入节点组内部，并捕获返回值
+                        result = find_light_node_group(group, node_name)
+                        if result:
+                            return result
+            return None
+
+        layout = self.layout
+        obj = context.object
+        if obj and obj.type == 'MESH':
+
+            # 材质色调映射
+            for slot in obj.material_slots:
+                mat = slot.material
+                if mat and mat.node_tree:
+                    light_node = find_light_node_group(mat.node_tree, "光颜色")
+                    if light_node:
+                        for node in light_node.node_tree.nodes:
+                            if node.type == 'GROUP':
+                                if node.name == '材质色调映射':
+                                    layout.label(text=i18n("Tone Mapping"))
+                                    for idx, input in enumerate(node.inputs):
+                                        if not input.hide_value:
+                                            if idx not in [0]:
+                                                if idx == 1:
+                                                    layout.prop(input, "default_value", text=i18n("impact"))
+                                                else:
+                                                    # node.inputs[1].default_value为0时 禁止修改.
+                                                    col = layout.column()
+                                                    col.enabled = node.inputs[1].default_value != 0
+                                                    col.prop(input, "default_value", text=input.name)
+                                        else:
+                                            layout.label(text=input.name)
+
+                        break
+
+            # 阴影映射范围
+            for slot in obj.material_slots:
+                mat = slot.material
+                if mat and mat.node_tree:
+                    light_node = find_light_node_group(mat.node_tree, "Shadow_Ramp采样")
+                    if light_node:
+                        for node in light_node.node_tree.nodes:
+                            if node.type == 'MAP_RANGE' and node.name == '映射范围':
+
+                                layout.label(text=i18n("Shadow Mapping Range"))
+
+                                for idx, input in enumerate(node.inputs):
+                                    if idx in [1, 2, 3, 4]:
+                                        layout.prop(input, "default_value", text=input.name)
+
+                        for node in light_node.node_tree.nodes:
+                            if node.type == 'GROUP' and node.name == '兰伯特':
+                                layout.label(text=i18n("Lambert Shadow"))
+                                for node2 in node.node_tree.nodes:
+                                    if node2.type == 'MATH' and node2.operation == 'MULTIPLY_ADD' and node2.name == 'Lambertian Shadow':
+                                        for idx, input in enumerate(node2.inputs):
+                                            if idx in [1, 2]:
+                                                label_json = {1: "Flexibility", 2: "offset"}
+                                                layout.prop(input, "default_value", text=i18n(label_json[idx]))
+
+                        break
+
+
+@reg_order(3)
 class makeAddonPanel(bpy.types.Panel):
     bl_label = "make presets"
     bl_idname = "SCENE_PT_make_presets"
@@ -140,6 +232,8 @@ class makeAddonPanel(bpy.types.Panel):
     bl_category = "MMI"
     # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
@@ -184,6 +278,13 @@ class makeAddonPanel(bpy.types.Panel):
                     layout.operator(DeleteModelVerticesOperator.bl_idname)
                     # 新版命名
                     layout.operator(ConvertOldNameToNewNameOperator.bl_idname)
+                    layout.operator(NormalizeNodeGroupNameOperator.bl_idname)
+                    # 添加材质色调映射
+                    layout.operator(AddToneMappingNode.bl_idname)
+                    # 钳制兰伯特阴影
+                    layout.operator(Make_Lambertian_Shadow.bl_idname)
+
+                    # 批量处理
                     layout.operator(blender_batch_process_operator.bl_idname)
 
             layout.label(text=i18n("material" if mmi.SRsampling else "Stroke"))
@@ -239,7 +340,7 @@ class makeAddonPanel(bpy.types.Panel):
             layout.label(text=i18n("Export"))
             layout.operator(SaveAsBlendOperator.bl_idname, icon="FILEBROWSER")
 
-@reg_order(3)
+@reg_order(4)
 class OtherfeaturesPanel(bpy.types.Panel):
     bl_label = "Other features"
     bl_idname = "SCENE_PT_make_presets_other_features"
@@ -248,6 +349,8 @@ class OtherfeaturesPanel(bpy.types.Panel):
     # name of the side panel
     bl_category = "MMI"
     bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
@@ -280,7 +383,7 @@ class OtherfeaturesPanel(bpy.types.Panel):
 
                 layout.operator(Adaptivestrokes.bl_idname)
 
-@reg_order(4)
+@reg_order(5)
 class MMIEyeThroughSettingsPanel(bpy.types.Panel): # 眼透设置
     bl_label = "Eye-through settings"
     bl_idname = "SCENE_PT_mmi_eye_through_settings"
@@ -290,6 +393,8 @@ class MMIEyeThroughSettingsPanel(bpy.types.Panel): # 眼透设置
     bl_category = "MMI"
     # 指定父面板的 ID
     bl_parent_id = "SCENE_PT_Default"
+    # 折叠面板
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout

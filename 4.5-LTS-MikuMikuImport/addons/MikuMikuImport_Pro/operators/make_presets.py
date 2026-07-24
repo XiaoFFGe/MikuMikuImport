@@ -905,6 +905,7 @@ class MakePres4Operator(bpy.types.Operator):
         print(new_file_path)
 
         def Additional_actions(A, B, filepath):
+            """ 追加集合操作 """
             # 指定要追加的集合的名称
             collection_name = A
             directory = B
@@ -2139,6 +2140,18 @@ class blender_batch_process_operator(bpy.types.Operator):
                 # 执行转换旧名新名操作
                 bpy.ops.object.convert_old_name_to_new_name_ops()
 
+                # 执行规格化节点组名称操作
+                bpy.ops.object.normalize_node_group_name_ops()
+
+                # 执行添加材质色调映射节点操作
+                bpy.ops.object.add_tone_mapping_node_ops(auto_mode=True)
+
+                # 执行钳制兰伯特阴影操作
+                bpy.ops.mmi.clamp_lambertian_shadow(auto_mode=True)
+                
+                # 执行删除未引用的数据操作
+                bpy.ops.outliner.orphans_purge()
+
                 # 保存.blend文件
                 bpy.ops.wm.save_mainfile()
 
@@ -2181,5 +2194,229 @@ class DeleteModelVerticesOperator(bpy.types.Operator):
 
             # 切换回对象模式
             bpy.ops.object.mode_set(mode='OBJECT')
+
+        return {'FINISHED'}
+
+# 规格化节点组名称
+class NormalizeNodeGroupNameOperator(bpy.types.Operator):
+    '''Normalize node group name'''
+    bl_idname = "object.normalize_node_group_name_ops"
+    bl_label = "Normalize node group name"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        def collect_node_groups_recursive(node_tree, collected):
+            """递归收集节点树中的所有节点组"""
+            for node in node_tree.nodes:
+                if node.type == 'GROUP':
+                    group = node.node_tree
+                    if group and group not in collected:
+                        collected.append(node)
+                        # 递归进入节点组内部
+                        collect_node_groups_recursive(group, collected)
+            return collected
+
+        # 遍历所有对象
+        for obj in bpy.data.objects:
+            if obj.type == 'MESH':
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    if mat and mat.node_tree:
+
+                        # 找到该材质的所有节点组（含嵌套）
+                        node_groups = collect_node_groups_recursive(mat.node_tree, [])
+
+                        for node in node_groups:
+                            print(f"材质: {mat.name}, 节点组: {node.name}")
+                            # 规格化节点名称
+                            node.name = node.node_tree.name
+
+        return {'FINISHED'}
+
+# 给当前模型添加色调映射节点
+class AddToneMappingNode(bpy.types.Operator):
+    '''Add tone mapping node'''
+    bl_idname = "object.add_tone_mapping_node_ops"
+    bl_label = "Add material tone mapping node"
+    # 确保在操作之前备份数据，用户撤销操作时可以恢复
+    bl_options = {'REGISTER', 'UNDO'}
+
+    # 自动模式
+    auto_mode : bpy.props.BoolProperty(default=False, name="自动模式")
+
+    def execute(self, context):
+
+        # 获取当前运行的Py文件的路径
+        current_file_path = __file__
+        # 获取当前Py文件所在的文件夹路径
+        new_path = os.path.dirname(current_file_path)
+        # 将当前文件夹路径和文件名组合成完整的文件路径
+        file = 'bhp.blend'
+        new_file_path = os.path.join(new_path, file)
+
+        def Additional_actions(A, B, filepath):
+            collection_name = A
+
+            with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+                if B == 'Collection':
+                    if collection_name in data_from.collections:
+                        data_to.collections = [collection_name]
+                elif B == 'NodeTree':
+                    if collection_name in data_from.node_groups:
+                        data_to.node_groups = [collection_name]
+
+        def node_exists(node_tree, node_name):
+            """检查节点树中是否存在指定名称的节点"""
+            for node in node_tree.nodes:
+                if node.name == node_name:
+                    return True
+            return False
+
+        def node_group_exists(node_group_name):
+            """检查blend文件是否存在指定名称的节点组"""
+            for group in bpy.data.node_groups:
+                if group.name == node_group_name:
+                    return True
+            return False
+
+        if self.auto_mode:
+            obj = bpy.data.objects.get(mmi_object_name['MMI_AAAA'])
+            if not obj:
+                print("未找到MMI_Mesh对象")
+                return {'CANCELLED'}
+
+        else:
+            obj = context.active_object
+
+        def find_light_node_group(node_tree):
+            """递归寻找名为 "光颜色" 的节点组"""
+
+            for node1 in node_tree.nodes:
+                if node1.name == '光颜色':
+                    return node1
+
+                if node1.type == 'GROUP':
+                    group = node1.node_tree
+                    if group:
+                        # 递归进入节点组内部，并捕获返回值
+                        result = find_light_node_group(group)
+                        if result:
+                            return result
+            return None
+
+        if obj and obj.type == 'MESH':
+            for slot in obj.material_slots:
+                mat = slot.material
+                if mat and mat.node_tree:
+
+                    light_node = find_light_node_group(mat.node_tree)
+
+                    if light_node:
+
+                        # 检查是否已存在材质色调映射节点
+                        if node_exists(light_node.node_tree, "材质色调映射"):
+                            print(f"材质: {mat.name}, 材质色调映射节点已存在")
+
+                            for node in light_node.node_tree.nodes:
+                                if node.name == "材质色调映射":
+                                    node.inputs[1].default_value = 0.0
+                                    break
+
+                            return {'FINISHED'}
+                        else:
+                            # 检查节点组是否存在
+                            if not node_group_exists("材质色调映射"):
+                                Additional_actions("材质色调映射", "NodeTree", new_file_path)
+
+                        print(f"材质: {mat.name}, 节点组: {light_node.name}")
+
+                        node_tree = light_node.node_tree # 获取光颜色节点组的节点树
+
+                        for node in node_tree.nodes:
+                            if node.type == 'GROUP_OUTPUT':
+                                input_socket = node.inputs[0] # 获取组输出节点的输入插口
+                                if input_socket.links:
+
+                                    old_link = input_socket.links[0] # 获取组输出节点的第一个链接
+                                    from_socket = old_link.from_socket # 获取旧链接的起始插口
+                                    to_socket = old_link.to_socket # 获取旧链接的结束插口
+
+                                    # 获取上游节点和输出节点本身
+                                    from_node = from_socket.node  # 原输出节点
+                                    to_node = to_socket.node  # GROUP_OUTPUT 节点
+
+                                    # 创建新节点
+                                    new_node = node_tree.nodes.new(type='ShaderNodeGroup')
+                                    new_node.name = "材质色调映射"
+                                    new_node.node_tree = bpy.data.node_groups["材质色调映射"]
+
+                                    new_node.inputs[1].default_value = 0.0
+
+                                    # 将新节点放置在两个节点的中间
+                                    mid_x = (from_node.location.x + to_node.location.x) / 2
+                                    mid_y = (from_node.location.y + to_node.location.y) / 2
+                                    new_node.location = (mid_x, mid_y)
+
+                                    # 移除旧链接，建立新链接
+                                    node_tree.links.remove(old_link)
+                                    node_tree.links.new(from_socket, new_node.inputs[0])
+                                    node_tree.links.new(new_node.outputs[0], to_socket)
+
+                                break  # 处理完第一个就跳出
+
+        return {'FINISHED'}
+
+# 钳制兰伯特阴影
+class Make_Lambertian_Shadow(bpy.types.Operator):
+    bl_idname = "mmi.clamp_lambertian_shadow"
+    bl_label = "Clamp Lambertian Shadow"
+    bl_description = "Clamp Lambertian Shadow"
+
+    bl_options = {'REGISTER', 'UNDO'}
+
+    # 自动模式
+    auto_mode : bpy.props.BoolProperty(default=False, name="自动模式")
+
+    def execute(self, context):
+
+        def find_light_node_group(node_tree, node_name):
+            """递归寻找名为 node_name 的节点组"""
+
+            for node1 in node_tree.nodes:
+                if node1.name == node_name and node1.type == 'GROUP':
+                    return node1
+
+                if node1.type == 'GROUP':
+                    group = node1.node_tree
+                    if group:
+                        # 递归进入节点组内部，并捕获返回值
+                        result = find_light_node_group(group, node_name)
+                        if result:
+                            return result
+            return None
+
+        # 自动模式
+        if self.auto_mode:
+            obj = bpy.data.objects.get(mmi_object_name['MMI_AAAA'])
+        else:
+            obj = context.active_object
+
+        if not obj or obj.type != 'MESH':
+            return {'CANCELLED'}
+
+        for slot in obj.material_slots:
+            mat = slot.material
+            if mat and mat.node_tree:
+                light_node = find_light_node_group(mat.node_tree, "Shadow_Ramp采样")
+                if light_node:
+
+                    for node in light_node.node_tree.nodes:
+                        if node.type == 'GROUP' and node.name == '兰伯特':
+                            for node2 in node.node_tree.nodes:
+                                if node2.type == 'MATH' and node2.operation == 'MULTIPLY_ADD':
+                                    node2.use_clamp = True
+                                    node2.name = "Lambertian Shadow"
 
         return {'FINISHED'}

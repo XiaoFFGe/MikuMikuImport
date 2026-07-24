@@ -61,7 +61,7 @@ class Render2Operator(bpy.types.Operator):
     )
 
     def execute(self, context):
-        global obj1, tyu
+        global obj1, tyu, sun
 
         mmi = context.object.mmi
         addon_prefs = context.preferences.addons[__addon_name__].preferences
@@ -130,7 +130,6 @@ class Render2Operator(bpy.types.Operator):
             # 取消隐藏
             tyus.hide_set(False)
 
-
             # 加选tyu
             bpy.data.objects[tyu].select_set(True)
 
@@ -163,6 +162,7 @@ class Render2Operator(bpy.types.Operator):
             return {'FINISHED'}
 
         def Additional_actions(A, B):
+            """ 追加集合操作 """
             # 指定要追加的集合的名称
             collection_name = A
             directory = B
@@ -175,16 +175,58 @@ class Render2Operator(bpy.types.Operator):
                 directory=os.path.join(self.filepath, directory),
                 filename=collection_name
             )
+
+        def Snap_and_move_object_matrix(obj1, obj2):
+            """ 对象矩阵对齐和移动, obj1是obj2的父级 """
+
+            # 计算obj2的矩阵世界矩阵
+            obj2.matrix_local = obj1.matrix_world.inverted() @ obj2.matrix_world
+
+            # 设置obj2的矩阵世界矩阵
+            obj2.matrix_world = obj1.matrix_world @ obj2.matrix_local
+
+        def Find_root_object(objs):
+            """ 查找所有对象的根对象，返回一个根对象列表 """
+            root_objects = []
+
+            for obj in objs:
+
+                obj_constraint_types = []
+
+                # 检查对象是否有子级约束
+                for constraint1 in obj.constraints:
+                    obj_constraint_types.append(constraint1.type)
+
+                # 检查对象是否有子级约束
+                if 'CHILD_OF' not in obj_constraint_types:
+                    # 检查对象是否有父级
+                    if obj.parent is None:
+                        root_objects.append(obj)
+
+            return root_objects
+
+
+        # 取消选择所有物体
+        bpy.ops.object.select_all(action='DESELECT')
+
+        mmi_object = []
+
         # 追加集合
         Additional_actions('【MMD预设】','Collection')
 
         # 获取当前选中的所有物体
         selected_objects = bpy.context.selected_objects
 
-        sun = None
+        print('追加物体：')
 
         # 遍历所有选中的物体
         for obj3 in selected_objects:
+
+            print(obj3.name)
+
+            # 加入mmi_object
+            mmi_object.append(obj3)
+
             # 检查对象类型是否为灯
             if obj3.type == 'LIGHT':
                 # 检查灯的类型是否为日光（Sun）
@@ -192,6 +234,12 @@ class Render2Operator(bpy.types.Operator):
                     # 打印灯的名称
                     print("日光灯名称：", obj3.name)
                     sun = obj3.name
+
+        # 对齐矩阵
+        for obj4 in Find_root_object(mmi_object):
+
+            # 对齐矩阵
+            Snap_and_move_object_matrix(active_object, obj4)
 
         # 创建一个转换表
         translator = str.maketrans('', '', string.punctuation)
@@ -328,6 +376,8 @@ class Render2Operator(bpy.types.Operator):
             # 根据名字选择物体
             obj = bpy.data.objects.get(shade_obj.name)
             if obj is not None:
+                if obj.name not in bpy.context.view_layer.objects:
+                    bpy.context.scene.collection.objects.link(obj)
                 obj.select_set(True)
                 # 设置为活动物体
                 bpy.context.view_layer.objects.active = obj
@@ -412,6 +462,8 @@ class Render2Operator(bpy.types.Operator):
             # 根据名字选择物体
             obj = bpy.data.objects.get(shade_obj.name)
             if obj is not None:
+                if obj.name not in bpy.context.view_layer.objects:
+                    bpy.context.scene.collection.objects.link(obj)
                 obj.select_set(True)
                 # 设置为活动物体
                 bpy.context.view_layer.objects.active = obj
@@ -748,18 +800,16 @@ class SetEyeThroughSettings(bpy.types.Operator):
         filepath = os.path.join(current_dir, "bhp.blend")
 
         def Additional_actions(A, B):
-            # 指定要追加的集合的名称
             collection_name = A
             directory = B
 
-            # 构建集合的完整路径
-            full_filepath = os.path.join(filepath, directory, collection_name)
-            # 执行追加操作
-            bpy.ops.wm.append(
-                filepath=full_filepath,
-                directory=os.path.join(filepath, directory),
-                filename=collection_name
-            )
+            with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+                if B == 'Collection':
+                    if collection_name in data_from.collections:
+                        data_to.collections = [collection_name]
+                elif B == 'NodeTree':
+                    if collection_name in data_from.node_groups:
+                        data_to.node_groups = [collection_name]
 
         # 检查当前场景是否存在名为 "MMI-眼透" 的几何节点组
         if "MMI-眼透" not in bpy.data.node_groups:
